@@ -226,6 +226,18 @@ SIM.SETTINGS = {
             SIM.UI.updateSidebar();
         });
 
+        view.fight.on('change', 'select[name="ragenormtable"]', function (e) {
+            e.stopPropagation();
+            SIM.UI.updateSession();
+            SIM.UI.updateSidebar();
+        });
+
+        view.fight.on('change', 'select[name="ragenorm"]', function (e) {
+            e.stopPropagation();
+            SIM.UI.updateSession();
+            SIM.UI.updateSidebar();
+        });
+
         view.fight.on('change', 'select[name="spellqueueing"]', function (e) {
             e.stopPropagation();
             SIM.UI.updateSession();

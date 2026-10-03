@@ -380,6 +380,7 @@ SIM.UI = {
 
                 time.text((report.endtime - report.starttime) / 1000);
                 stats.html(report.mindps.toFixed(2) + ' min&nbsp;&nbsp;&nbsp;&nbsp;' + report.maxdps.toFixed(2) + ' max');
+                view.showRageOverflow(report);
                 btn.css('background', '');
                 if (rows) view.simulateRows(Array.from(rows));
                 else if (weights) view.simulateWeights(player, mean, varmean);
@@ -402,6 +403,35 @@ SIM.UI = {
             },
         );
         sim.start(params);
+    },
+
+    showRageOverflow: function(report) {
+        let box = this.sidebar.find('#rage-overflow');
+        if (!box.length) {
+            box = $('<div id="rage-overflow" style="font-size:12px;line-height:1.5;margin:6px 0 10px;"></div>');
+            this.sidebar.find('#time').after(box);
+        }
+        if (!report.totalragegained) { box.html(''); return; }
+        const n = report.iterations, mins = report.totalduration / 60;
+        const pct = report.totalrageoverflow / report.totalragegained * 100;
+        let html = '<b>Rage overflow (over 100 cap)</b><br>' +
+            (report.totalrageoverflow / n).toFixed(1) + ' per fight&nbsp;&nbsp;·&nbsp;&nbsp;' +
+            (report.totalrageoverflow / mins).toFixed(1) + ' per min<br>' +
+            pct.toFixed(1) + '% of ' + (report.totalragegained / n).toFixed(1) + ' rage generated per fight';
+        let opp = Object.values(report.hsopp || {}).reduce((a, e) => ({ n: a.n + e.n, spent: a.spent + e.spent, forgone: a.forgone + e.forgone, cred: a.cred + (e.selfrage || 0) + (e.ohrage || 0) + (e.wfrage || 0) }), { n: 0, spent: 0, forgone: 0, cred: 0 });
+        if (opp.n > 0)
+            html += '<br>HS/Cleave white rage forgone: ' + (opp.forgone / n).toFixed(1) + ' per fight (' + (opp.forgone / opp.n).toFixed(1) + ' per cast, true cost ≈ ' + ((opp.spent + opp.forgone - opp.cred) / opp.n).toFixed(1) + ' before refunds)';
+        if (report.totalragestancelost > 0)
+            html += '<br>Lost on stance swap: ' + (report.totalragestancelost / n).toFixed(1) + ' per fight';
+        const groups = {};
+        for (const key in report.ragesrc || {}) {
+            const g = key.split('|')[0];
+            groups[g] = (groups[g] || 0) + report.ragesrc[key].over;
+        }
+        const srcs = Object.entries(groups).filter(e => e[1] > 0).sort((a, b) => b[1] - a[1]);
+        for (const [src, amt] of srcs)
+            html += '<br>&nbsp;&nbsp;' + src + ': ' + (amt / n).toFixed(1) + ' per fight';
+        box.html(html);
     },
 
     simulateWeights: function(player, mean, varmean) {
@@ -793,6 +823,51 @@ SIM.UI = {
         let ohdmg = player.stats.dmgmod * (player.oh ? player.oh.modifier * 100 : 0);
         view.sidebar.find('#dmgmod').html(mhdmg.toFixed(2) + '% <small>MH</small>' + (player.oh ? space + ohdmg.toFixed(2) + '% <small>OH</small>' : ''));
         view.sidebar.find('#haste').html((player.stats.haste * 100).toFixed(2) + '%');
+        const va = player.variants || {}; const vl = [];
+        if (va.btap != 0.45 || va.btflat) vl.push('BT ' + va.btap + '×AP' + (va.btflat ? ' + ' + va.btflat : ''));
+        if (va.wwoh) vl.push('WW hits OH');
+        if (va.wwcost != 25) vl.push('WW ' + va.wwcost + ' rage');
+        if (player.ftal && !player.forever) vl.push('Forever talents: UW ' + player.ftal.uw + '%, Furious Precision OH +' + player.ftal.ohhit + '% hit');
+        if ((va.flurryhaste && va.flurryhaste != player.talents.flurry) || va.flurrycharges != 3) vl.push('Flurry ' + (va.flurryhaste || player.talents.flurry) + '%/' + va.flurrycharges + ' swings');
+        if (va.dwdmg != 20 || va.dwdur != 30) vl.push('DW ' + va.dwdmg + '%/' + va.dwdur + 's');
+        if (va.execd) vl.push('Execute ' + va.execd + 's CD');
+        view.sidebar.find('#variantsrow').toggle(vl.length > 0);
+        view.sidebar.find('#variants').html('<small style="color:#d9a33b">' + vl.join(' · ') + '</small>');
+        const cs = player.custom || {};
+        const csOn = cs.hit || cs.crit || cs.dodgered;
+        view.sidebar.find('#customstatsrow').toggle(!!csOn);
+        view.sidebar.find('#customstats').html(csOn ? `+${cs.hit}% hit · +${cs.crit}% crit · −${cs.dodgered}% dodge` : '');
+        const rn = player.ragenorm;
+        const fv = player.forever;
+        if (fv) {
+            const oh = ['x2', 'x1', 'x1.5'][fv.ver], cm = ['x1', 'x1.75', 'x2'][fv.ver];
+            view.sidebar.find('#ragenormstatus').html('<b style="color:#fff;background:#36c;padding:0 5px;border-radius:3px">FOREVER v' + fv.ver + '</b>');
+            view.sidebar.find('#ragenormformula').show().html([
+                'Landed white swing: rate × weapon speed',
+                'rate 3.46 MH · 1.73 OH (' + oh + ' DW Spec) · 4.5 2H',
+                'Crit ' + cm + ' · Miss / dodge: 0 · damage ignored',
+                'Haste: full rage per swing · Windfury: full',
+                'UW ' + fv.uw + '% (white only) · Furious Precision OH +' + fv.ohhit + '% hit',
+            ].map(l => '<div style="float:none">' + l + '</div>').join(''));
+        } else {
+        view.sidebar.find('#ragenormstatus').html(rn
+            ? '<b style="color:#fff;background:#b33;padding:0 5px;border-radius:3px">NORMALIZED</b>'
+            : 'Classic');
+        view.sidebar.find('#ragenormformula').toggle(!!rn).html(rn ? [
+            'L = 7.5 × dmg ÷ 230.6 &nbsp;(Classic rage)',
+            't = weapon speed ÷ haste &nbsp;(current swing)',
+            'f = ' + rn.oh + ' off hand, ×2 crit',
+            'R₀ = 7.5 × ' + rn.k + ' × t × f ÷ 230.6',
+            'C = ' + rn.cap + ' × t × f',
+            'R = L &nbsp;if L ≤ R₀',
+            'R = R₀ + x ÷ (1 + (x ÷ (C − R₀))<sup>' + rn.p + '</sup>)<sup>1/' + rn.p + '</sup>, &nbsp;x = L − R₀',
+            'Windfury swing: R × ' + rn.wf + ' &nbsp;· Dodge: 0.75 × R(avg)',
+            ...(rn.tablecap ? [
+                'Table cap: C × min(1, M_ref ÷ M), M_ref ' + rn.mrefmh + ' MH / ' + rn.mrefoh + ' OH',
+                'M = hit + 2·crit + glance + 0.75·dodge (no Recklessness / Elune\'s Light)',
+            ] : []),
+        ].map(l => '<div style="float:none">' + l + '</div>').join('') : '');
+        }
         view.sidebar.find('#shadow-resist').html(player.stats.resist.shadow);
         view.sidebar.find('#arcane-resist').html(player.stats.resist.arcane);
         view.sidebar.find('#nature-resist').html(player.stats.resist.nature);
@@ -903,6 +978,22 @@ SIM.UI = {
         obj.filter_epic = view.main.find('#filter_epic').hasClass('active');
         obj.bleedreduction = view.fight.find('select[name="bleedreduction"]').val();
         obj.spellqueueing = view.fight.find('select[name="spellqueueing"]').val();
+        for (const n of ['varbtap','varbtflat','varwwoh','varwwcost','varfortal','varflurryhaste','varflurrycharges','vardwdmg','vardwdur','varexecd'])
+            obj[n] = view.fight.find('input[name="' + n + '"]').val();
+        obj.custombonushit = view.fight.find('input[name="custombonushit"]').val();
+        obj.custombonuscrit = view.fight.find('input[name="custombonuscrit"]').val();
+        obj.customdodgered = view.fight.find('input[name="customdodgered"]').val();
+        obj.ragenorm = view.fight.find('select[name="ragenorm"]').val();
+        obj.ragenormk = view.fight.find('input[name="ragenormk"]').val();
+        obj.ragenormcap = view.fight.find('input[name="ragenormcap"]').val();
+        obj.ragenormp = view.fight.find('input[name="ragenormp"]').val();
+        obj.ragenormoh = view.fight.find('input[name="ragenormoh"]').val();
+        obj.ragenormwf = view.fight.find('input[name="ragenormwf"]').val();
+        obj.ragenormtable = view.fight.find('select[name="ragenormtable"]').val();
+        obj.ragenormmrefmh = view.fight.find('input[name="ragenormmrefmh"]').val();
+        obj.ragenormmrefoh = view.fight.find('input[name="ragenormmrefoh"]').val();
+        obj.foreveruw = view.fight.find('input[name="foreveruw"]').val();
+        obj.foreverohhit = view.fight.find('input[name="foreverohhit"]').val();
         
 
         let _buffs = [], _rotation = [], _talents = [], _sources = [], _phases = [], _gear = {}, _enchant = {}, _runes = {}, _resistance = {};

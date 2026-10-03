@@ -3,11 +3,11 @@
 
 <head>
   <meta name="viewport" content="width=device-width">
-  <title>Season of Discovery - Warrior DPS Sim</title>
+  <title>[RAGE NORM] Season of Discovery - Warrior DPS Sim</title>
 
   <link rel="icon" type="image/x-icon" href="/WarriorSim/favicon.ico">
   <link href="dist/css/theme.default.min.css" rel="stylesheet">
-  <link href="dist/css/style.css" rel="stylesheet">
+  <link href="dist/css/style.css?v=ragenorm10" rel="stylesheet">
   <link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin>
   <link href="https://fonts.googleapis.com/css?family=Open+Sans:300,400,600,700,800&display=swap" rel="stylesheet">
 
@@ -115,29 +115,29 @@
     }
   </style>
 
-  <script type="text/javascript" src="dist/js/libs/jquery-3.4.1.min.js"></script>
-  <script type="text/javascript" src="dist/js/libs/jquery.tablesorter.min.js"></script>
-  <script type="text/javascript" src="dist/js/libs/jquery.tablesorter.widgets.min.js"></script>
-  <script type="text/javascript" src="dist/js/libs/Chart.min.js"></script>
+  <script type="text/javascript" src="dist/js/libs/jquery-3.4.1.min.js?v=ragenorm10"></script>
+  <script type="text/javascript" src="dist/js/libs/jquery.tablesorter.min.js?v=ragenorm10"></script>
+  <script type="text/javascript" src="dist/js/libs/jquery.tablesorter.widgets.min.js?v=ragenorm10"></script>
+  <script type="text/javascript" src="dist/js/libs/Chart.min.js?v=ragenorm10"></script>
 
-  <script type="text/javascript" src="dist/js/classes/player.min.js"></script>
-  <script type="text/javascript" src="dist/js/classes/simulation.min.js"></script>
-  <script type="text/javascript" src="dist/js/classes/spell.min.js"></script>
-  <script type="text/javascript" src="dist/js/classes/weapon.min.js"></script>
-  <script type="text/javascript" src="dist/js/data/gear_sod.min.js"></script>
-  <script type="text/javascript" src="dist/js/data/runes.min.js"></script>
-  <script type="text/javascript" src="dist/js/data/levelstats.min.js"></script>
-  <script type="text/javascript" src="dist/js/data/buffs.min.js"></script>
-  <script type="text/javascript" src="dist/js/data/enchants.min.js"></script>
-  <script type="text/javascript" src="dist/js/data/spells.min.js"></script>
-  <script type="text/javascript" src="dist/js/data/talents.min.js"></script>
-  <script type="text/javascript" src="dist/js/data/session_sod.min.js"></script>
-  <script type="text/javascript" src="dist/js/data/presets.min.js"></script>
-  <script type="text/javascript" src="dist/js/globals.min.js"></script>
-  <script type="text/javascript" src="dist/js/profiles.min.js"></script>
-  <script type="text/javascript" src="dist/js/settings.min.js"></script>
-  <script type="text/javascript" src="dist/js/stats.min.js"></script>
-  <script type="text/javascript" src="dist/js/ui.min.js"></script>
+  <script type="text/javascript" src="dist/js/classes/player.min.js?v=ragenorm10"></script>
+  <script type="text/javascript" src="dist/js/classes/simulation.min.js?v=ragenorm10"></script>
+  <script type="text/javascript" src="dist/js/classes/spell.min.js?v=ragenorm10"></script>
+  <script type="text/javascript" src="dist/js/classes/weapon.min.js?v=ragenorm10"></script>
+  <script type="text/javascript" src="dist/js/data/gear_sod.min.js?v=ragenorm10"></script>
+  <script type="text/javascript" src="dist/js/data/runes.min.js?v=ragenorm10"></script>
+  <script type="text/javascript" src="dist/js/data/levelstats.min.js?v=ragenorm10"></script>
+  <script type="text/javascript" src="dist/js/data/buffs.min.js?v=ragenorm10"></script>
+  <script type="text/javascript" src="dist/js/data/enchants.min.js?v=ragenorm10"></script>
+  <script type="text/javascript" src="dist/js/data/spells.min.js?v=ragenorm10"></script>
+  <script type="text/javascript" src="dist/js/data/talents.min.js?v=ragenorm10"></script>
+  <script type="text/javascript" src="dist/js/data/session_sod.min.js?v=ragenorm10"></script>
+  <script type="text/javascript" src="dist/js/data/presets.min.js?v=ragenorm10"></script>
+  <script type="text/javascript" src="dist/js/globals.min.js?v=ragenorm10"></script>
+  <script type="text/javascript" src="dist/js/profiles.min.js?v=ragenorm10"></script>
+  <script type="text/javascript" src="dist/js/settings.min.js?v=ragenorm10"></script>
+  <script type="text/javascript" src="dist/js/stats.min.js?v=ragenorm10"></script>
+  <script type="text/javascript" src="dist/js/ui.min.js?v=ragenorm10"></script>
 
   <script>var whTooltips = { colorLinks: true, iconizeLinks: false, renameLinks: false, "hide": { "ilvl": false } };</script>
   <script src="https://wow.zamimg.com/widgets/power.js"></script>
@@ -247,6 +247,19 @@
           <label>Haste</label>
           <span id="haste"></span>
         </li>
+        <li id="variantsrow" style="display:none">
+          <label>Ability Variants</label>
+          <span id="variants"></span>
+        </li>
+        <li id="customstatsrow" style="display:none">
+          <label>Custom Stats</label>
+          <span id="customstats"></span>
+        </li>
+        <li>
+          <label>Rage Formula</label>
+          <span id="ragenormstatus"></span>
+          <div id="ragenormformula" style="clear:both;display:none;padding-top:6px;font-size:11px;line-height:1.5;color:rgba(255,255,255,0.75)"></div>
+        </li>
         <li class="shadow-resist hidden">
           <label>Shadow Resist</label>
           <span id="shadow-resist"></span>
@@ -290,7 +303,7 @@
       <a href="#" class="btn js-stats disabled">STATS</a>
       <a href="#" class="btn js-settings">SETTINGS</a>
       <a href="#" class="btn js-profiles">PROFILES</a>
-      <div class="author">made by Guybrush-Golemagg</div>
+      <div class="author">made by Guybrush-Golemagg · <span style="color:#fff;background:#b33;padding:1px 6px;border-radius:3px;font-weight:bold">RAGE NORM build 10</span> <span style="color:#6c6">(rage stats build 9 base)</span></div>
       <div class="manual"><a href="https://docs.google.com/document/d/1-ugglMDHqIQlEDiE2z9G7zuI-kgyvb2kvgPobWbcxy0/edit" target="_blank">User Manual</a></div>
       <div class="manual"><a href="https://github.com/GuybrushGit/WarriorSim" target="_blank">Github</a></div>
     </div>
@@ -428,6 +441,111 @@
               <option value="No">No</option>
             </select>
           </li>
+          <li style="border-top:1px solid #d9a33b; margin-top:6px; padding-top:6px">
+            <label style="color:#d9a33b" title="Bloodthirst damage = AP x this. Classic 0.45.">Bloodthirst AP coeff</label>
+            <input type="text" name="varbtap" value="0.45">
+          </li>
+          <li>
+            <label style="color:#d9a33b" title="Flat damage added to Bloodthirst. Classic 0. Forever: 48 (with AP coeff 0.35).">Bloodthirst flat dmg</label>
+            <input type="text" name="varbtflat" value="0">
+          </li>
+          <li>
+            <label style="color:#d9a33b" title="1 = Whirlwind also hits with the off hand (Forever, Raging Blows). 0 = Classic, main hand only.">Whirlwind off-hand hit (1/0)</label>
+            <input type="text" name="varwwoh" value="0">
+          </li>
+          <li>
+            <label style="color:#d9a33b" title="Whirlwind base rage cost. Classic 25. Forever with Raging Blows (-3): 22.">Whirlwind rage cost</label>
+            <input type="text" name="varwwcost" value="25">
+          </li>
+          <li>
+            <label style="color:#69c" title="1 = use the Forever UW % and Furious Precision OH hit % below with Classic or Curved rage too. Always on in the Forever rage modes.">Forever talents (1/0)</label>
+            <input type="text" name="varfortal" value="0">
+          </li>
+          <li>
+            <label style="color:#d9a33b" title="Flurry haste %. 0 = use talent rank (30% at 5/5).">Flurry haste %</label>
+            <input type="text" name="varflurryhaste" value="0">
+          </li>
+          <li>
+            <label style="color:#d9a33b" title="Number of swings Flurry lasts. Classic 3.">Flurry charges</label>
+            <input type="text" name="varflurrycharges" value="3">
+          </li>
+          <li>
+            <label style="color:#d9a33b" title="Death Wish damage bonus %. Classic 20.">Death Wish dmg %</label>
+            <input type="text" name="vardwdmg" value="20">
+          </li>
+          <li>
+            <label style="color:#d9a33b" title="Death Wish duration in seconds. Classic 30.">Death Wish duration (s)</label>
+            <input type="text" name="vardwdur" value="30">
+          </li>
+          <li>
+            <label style="color:#d9a33b" title="Execute cooldown in seconds. 0 = no cooldown (Classic).">Execute cooldown (s)</label>
+            <input type="text" name="varexecd" value="0">
+          </li>
+          <li style="border-top:1px solid #6c6; margin-top:6px; padding-top:6px">
+            <label style="color:#6c6" title="Added on top of gear, buffs and talents. Shows up in the sidebar Hit / Crit lines.">Bonus Hit %</label>
+            <input type="text" name="custombonushit" value="0">
+          </li>
+          <li>
+            <label style="color:#6c6" title="Added on top of gear, buffs and talents.">Bonus Crit %</label>
+            <input type="text" name="custombonuscrit" value="0">
+          </li>
+          <li>
+            <label style="color:#6c6" title="Subtracted from the boss's chance to dodge your attacks. Use 100 to remove dodges entirely.">Boss Dodge Reduction %</label>
+            <input type="text" name="customdodgered" value="0">
+          </li>
+          <li style="border-top:1px solid #6c6; margin-top:6px; padding-top:6px">
+            <label style="color:#6c6">Rage Normalization</label>
+            <select dir="rtl" name="ragenorm">
+              <option value="Off">Off (Classic)</option>
+              <option value="On">On (Normalized)</option>
+              <option value="F0">Forever v0 (OH x2, no crit bonus)</option>
+              <option value="F1">Forever v1 (OH x1, crit x1.75)</option>
+              <option value="F2">Forever v2 (OH x1.5, crit x2)</option>
+            </select>
+          </li>
+          <li>
+            <label style="color:#69c" title="Forever modes, or any mode with Forever talents = 1. Unbridled Wrath proc chance at 5/5 (60 = tooltip/fixed, 36 = beta bug). Never procs from Heroic Strike or Cleave in Forever.">Forever UW % (5/5)</label>
+            <input type="text" name="foreveruw" value="60">
+          </li>
+          <li>
+            <label style="color:#69c" title="Forever modes, or any mode with Forever talents = 1. Off-hand hit from Forever's Furious Precision talent: 4 / 7 / 10 at 1 / 2 / 3 points. Use 0 for none.">Furious Precision OH hit %</label>
+            <input type="text" name="foreverohhit" value="10">
+          </li>
+          <li>
+            <label title="Classic rage up to k x current swing time (damage). Off hand x OH factor, crits x2.">RN threshold k</label>
+            <input type="text" name="ragenormk" value="171">
+          </li>
+          <li>
+            <label title="Per-hit rage cap = cap x current swing time. Off hand x OH factor, crits x2.">RN cap (rage/hasted s)</label>
+            <input type="text" name="ragenormcap" value="13">
+          </li>
+          <li>
+            <label title="Sharpness of the bend into the cap. Higher = stays Classic longer, bends harder.">RN sharpness p</label>
+            <input type="text" name="ragenormp" value="3">
+          </li>
+          <li>
+            <label title="Off-hand multiplier on threshold and cap.">RN off-hand factor</label>
+            <input type="text" name="ragenormoh" value="0.625">
+          </li>
+          <li>
+            <label title="Windfury extra-attack swings get this share of the rage.">RN Windfury factor</label>
+            <input type="text" name="ragenormwf" value="0.75">
+          </li>
+          <li>
+            <label title="Shrink the per-hit cap when a hand's white attack table is stronger than the reference table (M_ref). Recklessness and Elune's Light crit are ignored.">RN table cap (M_ref)</label>
+            <select dir="rtl" name="ragenormtable">
+              <option value="Off">Off</option>
+              <option value="On">On</option>
+            </select>
+          </li>
+          <li>
+            <label title="Reference table strength for the main hand: hit + 2 x crit + glance + 0.75 x dodge (T3 + WB = 1.266).">RN M_ref main hand</label>
+            <input type="text" name="ragenormmrefmh" value="1.266">
+          </li>
+          <li>
+            <label title="Reference table strength for the off hand (T3 + WB = 1.398).">RN M_ref off hand</label>
+            <input type="text" name="ragenormmrefoh" value="1.398">
+          </li>
         </ul>
       </article>
 
@@ -543,6 +661,11 @@
       <article>
         <label>DPS Spread</label>
         <div class="container-spread"><canvas></canvas></div>
+      </article>
+
+      <article style="width:100%;display:block;">
+        <label>Rage Generated</label>
+        <div class="container-rage"><div style="opacity:.7">Run a sim (DPS button) to fill this table.</div></div>
       </article>
 
     </div>

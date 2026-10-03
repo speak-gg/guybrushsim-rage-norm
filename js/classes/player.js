@@ -9,6 +9,44 @@ class Player {
             adjacent: parseInt($('input[name="adjacent"]').val()),
             mode: globalThis.mode,
             spellqueueing: $('select[name="spellqueueing"]').val() == "Yes",
+            variants: {
+                btap: (v => isNaN(v) ? 0.45 : v)(parseFloat($('input[name="varbtap"]').val())),
+                btflat: parseFloat($('input[name="varbtflat"]').val()) || 0,
+                wwoh: parseInt($('input[name="varwwoh"]').val()) || 0,
+                wwcost: (v => isNaN(v) ? 25 : v)(parseFloat($('input[name="varwwcost"]').val())),
+                fortal: parseInt($('input[name="varfortal"]').val()) || 0,
+                flurryhaste: parseFloat($('input[name="varflurryhaste"]').val()) || 0,
+                flurrycharges: parseInt($('input[name="varflurrycharges"]').val()) || 3,
+                dwdmg: (v => isNaN(v) ? 20 : v)(parseFloat($('input[name="vardwdmg"]').val())),
+                dwdur: parseFloat($('input[name="vardwdur"]').val()) || 30,
+                execd: parseFloat($('input[name="varexecd"]').val()) || 0,
+            },
+            custom: {
+                hit: parseFloat($('input[name="custombonushit"]').val()) || 0,
+                crit: parseFloat($('input[name="custombonuscrit"]').val()) || 0,
+                dodgered: parseFloat($('input[name="customdodgered"]').val()) || 0,
+            },
+            ragenorm: {
+                on: $('select[name="ragenorm"]').val() == "On",
+                k: parseFloat($('input[name="ragenormk"]').val()) || 171,
+                cap: parseFloat($('input[name="ragenormcap"]').val()) || 13,
+                p: parseFloat($('input[name="ragenormp"]').val()) || 3,
+                oh: parseFloat($('input[name="ragenormoh"]').val()) || 0.625,
+                wf: (v => isNaN(v) ? 0.75 : v)(parseFloat($('input[name="ragenormwf"]').val())),
+                tablecap: $('select[name="ragenormtable"]').val() == "On",
+                mrefmh: parseFloat($('input[name="ragenormmrefmh"]').val()) || 1.266,
+                mrefoh: parseFloat($('input[name="ragenormmrefoh"]').val()) || 1.398,
+            },
+            // FOREVER rage: rate x weapon speed per landed white swing (Marrow's compendium). v0/v1/v2 differ in off-hand and crit multipliers.
+            forever: (v => /^F[012]$/.test(v) ? {
+                ver: parseInt(v[1]),
+                uw: (x => isNaN(x) ? 60 : x)(parseFloat($('input[name="foreveruw"]').val())),
+                ohhit: (x => isNaN(x) ? 10 : x)(parseFloat($('input[name="foreverohhit"]').val())),
+            } : null)($('select[name="ragenorm"]').val()),
+            ftal: {
+                uw: (x => isNaN(x) ? 60 : x)(parseFloat($('input[name="foreveruw"]').val())),
+                ohhit: (x => isNaN(x) ? 10 : x)(parseFloat($('input[name="foreverohhit"]').val())),
+            },
             target: {
                 level: parseInt($('input[name="targetlevel"]').val()),
                 basearmor: parseInt($('select[name="targetbasearmor"]').val() || $('input[name="targetcustomarmor"]').val()),
@@ -34,6 +72,12 @@ class Player {
         this.itemtimer = 0;
         this.stancetimer = 0;
         this.ragetimer = 0;
+        this.ragegained = 0;
+        this.rageoverflow = 0;
+        this.ragestancelost = 0;
+        this.ragesrc = {};
+        this.hsopp = {};
+        this.ragespent = {};
         this.dodgetimer = 0;
         this.crittimer = 0;
         this.critdmgbonus = 0;
@@ -55,10 +99,22 @@ class Player {
         this.mode = config.mode;
         this.bleedmod = parseFloat(this.target.bleedreduction);
         this.spellqueueing = config.spellqueueing;
+        // RAGE NORM: normalized white-hit rage (threshold + smooth cap on hasted swing time)
+        this.forever = config.forever && config.forever.ver !== undefined ? config.forever : null;
+        this.ragenorm = !this.forever && config.ragenorm && config.ragenorm.on ? config.ragenorm : null;
+        // Forever talents (Unbridled Wrath %, white swings only; Dual Wield Spec off-hand hit). Always on in Forever rage modes;
+        // with Classic or Curved rage, on when the "Forever talents" variant is 1.
+        this.ftal = this.forever ? this.forever : (config.variants && config.variants.fortal && config.ftal ? config.ftal : null);
+        this.pendingwf = 0;
+        this.wfswing = false;
         this.target.misschance = this.getTargetSpellMiss();
         this.target.mitigation = this.getTargetSpellMitigation();
         this.target.binaryresist = this.getTargetSpellBinaryResist();
-        this.target.dodge = 0;
+        // RAGE NORM: manual test stats (bonus hit/crit, boss dodge reduction)
+        this.custom = config.custom || { hit: 0, crit: 0, dodgered: 0 };
+        // Ability variants (defaults = Classic): BT AP coefficient, Flurry haste/charges, Death Wish dmg/duration, Execute cooldown
+        this.variants = Object.assign({ btap: 0.45, btflat: 0, wwoh: 0, wwcost: 25, flurryhaste: 0, flurrycharges: 3, dwdmg: 20, dwdur: 30, execd: 0 }, config.variants || {});
+        this.target.dodge = this.custom.dodgered || 0;
         this.timeworn = 0;
         this.dodgetimeworn = 0;
         this.base = {
@@ -131,6 +187,8 @@ class Player {
             this.testItem = testItem;
             this.testItemType = testType;
         }
+        this.base.hit += this.custom.hit || 0;
+        this.base.crit += this.custom.crit || 0;
         this.stats = {};
         this.auras = {};
         this.spells = {};
@@ -698,6 +756,13 @@ class Player {
     }
     reset(rage) {
         this.rage = rage;
+        this.ragegained = 0;
+        this.rageoverflow = 0;
+        this.ragestancelost = 0;
+        this.ragesrc = {};
+        this.hsopp = {};
+        this.ragespent = {};
+        if (rage > 0) this.ragesrc['Starting Rage|'] = { n: 1, casts: 0, gen: rage, over: 0 };
         this.timer = 0;
         this.itemtimer = 0;
         this.stancetimer = 0;
@@ -713,6 +778,8 @@ class Player {
             this.oh.timer = Math.round(this.oh.speed * 1000 / this.stats.haste / 2);
         this.extraattacks = 0;
         this.batchedextras = 0;
+        this.pendingwf = 0;
+        this.wfswing = false;
         this.nextswinghs = false;
         this.nextswingcl = false;
         this.freeslam = false;
@@ -779,6 +846,13 @@ class Player {
             this.oh.miss = this.getMissChance(this.oh);
             this.oh.dwmiss = this.getDWMissChance(this.oh);
             this.oh.dodge = this.getDodgeChance(this.oh);
+            // FOREVER: Furious Precision (Fury, 4/7/10% off-hand hit). Every Fury build takes 3/3 = 10.
+            // (Dual Wield Specialization lost its off-hand hit in the 1 Oct 2026 beta build.)
+            if (this.ftal && this.ftal.ohhit) {
+                const b = this.ftal.ohhit;
+                this.oh.miss = Math.max(this.oh.miss - b, 0);
+                this.oh.dwmiss = Math.max(this.oh.dwmiss - b, 0);
+            }
         }
     }
     updateAuras() {
@@ -1020,35 +1094,129 @@ class Player {
         let r = this.target.armor / (this.target.armor + 400 + 85 * this.level);
         return r > 0.75 ? 0.75 : r;
     }
+    // Adds rage, clamps at 100 and records it per source (group + detail) for the Rage Generated stats.
+    // cast = true marks the event as a use of an ability/item (e.g. Bloodrage, potions) rather than a tick or proc.
+    gainRage(amount, group, detail, cast) {
+        if (!(amount > 0)) return;
+        let key = group + '|' + (detail || '');
+        let src = this.ragesrc[key] || (this.ragesrc[key] = { n: 0, casts: 0, gen: 0, over: 0 });
+        src.n++;
+        if (cast) src.casts++;
+        src.gen += amount;
+        this.ragegained += amount;
+        let total = this.rage + amount;
+        if (total > 100) {
+            let over = total - 100;
+            this.rageoverflow += over;
+            src.over += over;
+            total = 100;
+        }
+        this.rage = total;
+    }
     addRage(dmg, result, weapon, spell) {
         let oldRage = this.rage;
-        if (!spell || spell instanceof HeroicStrike || spell instanceof Cleave) {
+        let gainedBefore = this.ragegained;
+        let hand = weapon && weapon.offhand ? 'Off Hand' : 'Main Hand';
+        let resname = result == RESULT.CRIT ? 'Crit' : result == RESULT.GLANCE ? 'Glance' : result == RESULT.DODGE ? 'Dodge' : result == RESULT.MISS ? 'Miss' : 'Hit';
+        if (this.ftal) {
+            // FOREVER: Unbridled Wrath only from landed white swings (not Heroic Strike / Cleave); uw = % at 5/5
+            if (!spell && result != RESULT.MISS && result != RESULT.DODGE && this.talents.umbridledwrath && rng10k() < this.foreverUW() * 100)
+                this.gainRage(1, 'Unbridled Wrath', hand + ' auto attack');
+        }
+        else if (!spell || spell instanceof HeroicStrike || spell instanceof Cleave) {
             if (result != RESULT.MISS && result != RESULT.DODGE && this.talents.umbridledwrath && rng10k() < this.talents.umbridledwrath * 100) {
-                this.rage += 1;
+                this.gainRage(1, 'Unbridled Wrath', spell ? spell.name : hand + ' auto attack');
             }
         }
         if (spell) {
             if (spell instanceof Execute) spell.result = result;
             if (result == RESULT.MISS || result == RESULT.DODGE) {
-                this.rage += spell.refund ? spell.cost * 0.8 : 0;
+                if (spell.refund) this.gainRage(spell.cost * 0.8, 'Ability Refunds (80% of cost)', spell.name + ' (' + resname + ')');
                 oldRage += (spell.cost || 0) + (spell.usedrage || 0); // prevent cbr proccing on refunds
             }
         }
         else {
-            if (result == RESULT.DODGE) {
-                this.rage += (weapon.avgdmg() / this.rageconversion) * 7.5 * 0.75;
+            const wf = !weapon.offhand && this.wfswing;
+            const label = hand + (wf ? ' Windfury' : '') + ' (' + resname + ')';
+            if (this.forever) {
+                // FOREVER: misses and dodges give nothing; a landed swing gives rate x weapon speed, whatever its damage
+                if (result != RESULT.MISS && result != RESULT.DODGE) this.gainRage(this.foreverRage(weapon, result == RESULT.CRIT), 'Auto Attacks', label);
+            }
+            else if (result == RESULT.DODGE) {
+                if (this.ragenorm) this.gainRage(0.75 * this.normRage(weapon.avgdmg(), weapon, false, wf), 'Auto Attacks', label);
+                else this.gainRage((weapon.avgdmg() / this.rageconversion) * 7.5 * 0.75, 'Auto Attacks', label);
             }
             else if (result != RESULT.MISS) {
-                this.rage += (dmg / this.rageconversion) * 7.5 * this.ragemod;
+                if (this.ragenorm) this.gainRage(this.normRage(dmg, weapon, result == RESULT.CRIT, wf), 'Auto Attacks', label);
+                else this.gainRage((dmg / this.rageconversion) * 7.5 * this.ragemod, 'Auto Attacks', label);
             }
         }
-        if (this.extrarage && result == RESULT.HIT) this.rage += this.extrarage;
-        if (this.extracritrage && result == RESULT.CRIT) this.rage += this.extracritrage;
-        
-        if (this.rage > 100) this.rage = 100;
+        if (this.extrarage && result == RESULT.HIT) this.gainRage(this.extrarage, 'Frenzied Assault', (spell ? spell.name : hand + ' auto attack') + ' (Hit)');
+        if (this.extracritrage && result == RESULT.CRIT) this.gainRage(this.extracritrage, 'Frenzied Assault', (spell ? spell.name : hand + ' auto attack') + ' (Crit)');
 
+        if ((spell instanceof HeroicStrike || spell instanceof Cleave) && result != RESULT.MISS && result != RESULT.DODGE)
+            this.hsoppEntry(spell.name).selfrage += this.ragegained - gainedBefore;
         if (this.auras.consumedrage && oldRage < 60 && this.rage >= 60)
             this.auras.consumedrage.use();
+    }
+    // RAGE NORM: rage from one white hit (or the average swing behind a dodge).
+    // L = Classic rage of the hit. t = weapon's current (hasted) swing time.
+    // Threshold D0 = k * t and cap C = cap * t (off hand x oh, crit x2 on both).
+    // Classic rage up to D0, then R = R0 + x / (1 + (x / (C - R0))^p)^(1/p), x = L - R0.
+    // Windfury extra-attack swings get x wf.
+    normRage(dmg, weapon, crit, wf) {
+        const n = this.ragenorm;
+        const s = 7.5 * this.ragemod / this.rageconversion;
+        const L = Math.max(dmg, 0) * s;
+        const t = weapon.speed / this.stats.haste;
+        const f = (weapon.offhand ? n.oh : 1) * (crit ? 2 : 1);
+        const R0 = s * n.k * t * f;
+        let C = n.cap * t * f;
+        // RAGE NORM table cap: shrink the cap when this hand's white attack table is stronger than the reference
+        if (n.tablecap) {
+            const M = this.whiteTableM(weapon);
+            const Mref = weapon.offhand ? n.mrefoh : n.mrefmh;
+            if (M > Mref) C *= Mref / M;
+        }
+        let r;
+        if (L <= R0) r = L;
+        else if (C <= R0) r = R0;
+        else {
+            const x = L - R0;
+            r = R0 + x / Math.pow(1 + Math.pow(x / (C - R0), n.p), 1 / n.p);
+        }
+        return wf ? r * n.wf : r;
+    }
+    // FOREVER: rage from one landed white swing = rate x listed weapon speed (haste does not shrink it).
+    // Rates from Marrow's compendium: 3.46 main hand, 1.73 off hand, 4.5 two-hander.
+    // Off-hand multiplier from Dual Wield Specialization (scaled by points): v0 x2, v1 x1, v2 x1.5. Crit: v0 x1, v1 x1.75, v2 x2.
+    foreverRage(weapon, crit) {
+        const v = this.forever.ver;
+        const rate = weapon.twohand ? 4.5 : weapon.offhand ? 1.73 : 3.46;
+        const pts = (this.talents.offmod || 0) / 0.25;
+        const ohm = weapon.offhand ? 1 + ([1, 0, 0.5][v]) * pts : 1;
+        const cm = crit ? [1, 1.75, 2][v] : 1;
+        return rate * weapon.speed * ohm * cm;
+    }
+    // FOREVER: Unbridled Wrath proc chance in %, scaled from the 5/5 value (60 = fixed tooltip, 36 = beta bug)
+    foreverUW() {
+        return this.talents.umbridledwrath / 40 * this.ftal.uw;
+    }
+    // RAGE NORM: white attack-table strength M = P(hit) + 2 P(crit) + P(glance) + 0.75 P(dodge).
+    // Crit from Recklessness and Elune's Light is left out, so those cooldowns still raise rage while active.
+    whiteTableM(weapon) {
+        const pMiss = Math.max(this.oh ? weapon.dwmiss : weapon.miss, 0) / 100;
+        const pDodge = Math.max(weapon.dodge, 0) / 100;
+        const pGlance = Math.max(weapon.glanceChance, 0) / 100;
+        const pRemain = Math.max(1 - pMiss - pDodge - pGlance, 0);
+        let excluded = 0;
+        const rk = this.auras.recklessness;
+        if (rk && rk.timer && rk.stats) excluded += rk.stats.crit || 0;
+        const el = this.auras.eluneslight;
+        if (el && el.timer) excluded += (el.stats && el.stats.crit) || 10;
+        const pCrit = Math.min(Math.max(this.crit + weapon.crit - excluded, 0) / 100, pRemain);
+        const pHit = pRemain - pCrit;
+        return pHit + 2 * pCrit + pGlance + 0.75 * pDodge;
     }
     steptimer(a) {
         if (this.timer <= a) {
@@ -1086,7 +1254,7 @@ class Player {
     stepragetimer(a) {
         if (this.ragetimer <= a) {
             this.ragetimer = 0;
-            this.rage += 10;
+            this.gainRage(10, 'Stance Switch', '', true);
             /* start-log */ if (this.logging) this.log('10 rage gained'); /* end-log */
             return true;
         }
@@ -1290,6 +1458,90 @@ class Player {
             return RESULT.CRIT;
         return RESULT.HIT;
     }
+    // Deducts rage and records it per ability for the Rage Spent stats.
+    // extra = true adds rage without counting a new cast (Execute consuming its remaining rage).
+    spendRage(amount, name, extra) {
+        this.rage -= amount;
+        if (!(amount > 0)) return;
+        let e = this.ragespent[name] || (this.ragespent[name] = { n: 0, rage: 0, extra: 0 });
+        if (extra) e.extra += amount;
+        else { e.n++; e.rage += amount; }
+    }
+    // Heroic Strike / Cleave opportunity cost: a queued HS/Cleave replaces the main hand white swing,
+    // so the rage that swing would have generated is lost. Records cost paid and the expected forgone white rage.
+    hsoppEntry(name) {
+        return this.hsopp[name] || (this.hsopp[name] = { n: 0, spent: 0, forgone: 0, forgonedmg: 0, selfrage: 0, ohswings: 0, ohrage: 0, ohdmg: 0, wfprocs: 0, wfdmg: 0, wfrage: 0 });
+    }
+    trackReplacedSwing(spell, weapon, cost) {
+        let e = this.hsoppEntry(spell.name);
+        let w = this.expectedWhite(weapon, undefined, 0, this.wfswing);
+        e.n++;
+        e.spent += cost;
+        e.forgone += w.rage;
+        e.forgonedmg += w.dmg;
+        // Windfury Totem: 20% on a landed main hand attack (not miss/dodge) while Windfury is not already active.
+        // HS/Cleave have no dual wield miss penalty, so they land (and proc Windfury) more often than the
+        // replaced white swing. Credit the expected extra procs, each worth one extra main hand white attack
+        // with the Windfury AP bonus.
+        let wf = this.auras.windfury;
+        if (this.mh.windfury && wf && !wf.timer) {
+            const dodge = Math.max(weapon.dodge, 0) / 100;
+            const landWhite = Math.max(1 - Math.max(weapon.dwmiss, 0) / 100 - dodge, 0);
+            const landSpell = Math.max(1 - Math.max(weapon.miss, 0) / 100 - (spell.canDodge ? dodge : 0), 0);
+            const extra = 0.2 * (landSpell - landWhite);
+            if (extra) {
+                let wfap = 0;
+                if (wf.stats && wf.stats.ap) wfap += wf.stats.ap * this.stats.apmod;
+                if (wf.mult_stats && wf.mult_stats.apmod) wfap += this.stats.ap * wf.mult_stats.apmod / 100;
+                const a = this.expectedWhite(this.mh, this.mh.dwmiss, wfap, true);
+                e.wfprocs += extra;
+                e.wfdmg += extra * a.dmg;
+                e.wfrage += extra * a.rage;
+            }
+        }
+    }
+    // Expected damage and rage from one white swing with this weapon, using the same attack table as rollweapon()
+    // (dual wield miss, dodge, glance, crit) and the same rage formula as addRage(). It is an expected value,
+    // so it does not consume the sim's RNG and leaves DPS results unchanged. Includes Unbridled Wrath
+    // and Frenzied Assault flat hit/crit rage. miss overrides the miss chance (default: dual wield miss).
+    expectedWhite(weapon, miss, apbonus, wf) {
+        const pMiss = Math.max(miss === undefined ? weapon.dwmiss : miss, 0) / 100;
+        const pDodge = Math.max(weapon.dodge, 0) / 100;
+        const pGlance = Math.max(weapon.glanceChance, 0) / 100;
+        const pRemain = Math.max(1 - pMiss - pDodge - pGlance, 0);
+        const pCrit = Math.min(Math.max(this.crit + weapon.crit, 0) / 100, pRemain);
+        const pHit = pRemain - pCrit;
+
+        let avg = (weapon.mindmg + weapon.maxdmg) / 2 + weapon.bonusdmg + ((this.stats.ap + (apbonus || 0)) / 14) * weapon.speed + this.stats.moddmgdone;
+        avg = (avg * weapon.modifier * this.stats.dmgmod + this.stats.moddmgtaken) * (1 - this.armorReduction);
+
+        const diff = this.target.defense - this.stats['skill_' + weapon.type];
+        const glow = Math.max(Math.min(1.3 - 0.05 * diff, 0.91), 0.01);
+        const ghigh = Math.max(Math.min(1.2 - 0.03 * diff, 0.99), 0.2);
+        const glanceMod = (glow + ghigh) / 2;
+        const critMod = 1 + 1 * (1 + this.critdmgbonus * 2);
+
+        const perDmg = 7.5 * this.ragemod / this.rageconversion;
+        const dmg = pHit * avg + pGlance * avg * glanceMod + pCrit * avg * critMod;
+        let rage;
+        if (this.forever) {
+            rage = (pHit + pGlance) * this.foreverRage(weapon, false) + pCrit * this.foreverRage(weapon, true);
+        }
+        else if (this.ragenorm) {
+            // RAGE NORM: apply the curve to each outcome's average damage
+            rage = pHit * this.normRage(avg, weapon, false, wf) + pGlance * this.normRage(avg * glanceMod, weapon, false, wf)
+                + pCrit * this.normRage(avg * critMod, weapon, true, wf) + pDodge * 0.75 * this.normRage(weapon.avgdmg(), weapon, false, wf);
+        }
+        else {
+            rage = dmg * perDmg;
+            rage += pDodge * (weapon.avgdmg() / this.rageconversion) * 7.5 * 0.75;
+        }
+        if (this.extrarage) rage += pHit * this.extrarage;
+        if (this.extracritrage) rage += pCrit * this.extracritrage;
+        // Unbridled Wrath: 1 rage on any swing that is not a miss or dodge
+        if (this.talents.umbridledwrath) rage += (1 - pMiss - pDodge) * (this.ftal ? this.foreverUW() : this.talents.umbridledwrath) / 100;
+        return { rage, dmg };
+    }
     attackmh(weapon, adjacent, damageSoFar) {
         this.stepauras();
 
@@ -1302,12 +1554,17 @@ class Player {
             if (this.spells.heroicstrike && this.spells.heroicstrike.cost <= this.rage) {
                 result = this.rollmeleespell(this.spells.heroicstrike);
                 spell = this.spells.heroicstrike;
-                this.rage -= spell.cost;
+                this.spendRage(spell.cost, spell.name);
+                if (!adjacent) this.trackReplacedSwing(spell, weapon, spell.cost);
             }
             else if (this.spells.cleave && this.spells.cleave.cost <= this.rage) {
                 result = this.rollmeleespell(this.spells.cleave);
                 spell = this.spells.cleave;
-                if (adjacent) this.rage -= spell.cost;
+                if (adjacent) {
+                    this.spendRage(spell.cost, spell.name);
+                    if (this.hsopp[spell.name]) this.hsopp[spell.name].spent += spell.cost;
+                }
+                else this.trackReplacedSwing(spell, weapon, 0);
             }
             else {
                 result = this.rollweapon(weapon);
@@ -1360,6 +1617,15 @@ class Player {
 
         let procdmg = 0;
         let result;
+        if (this.nextswinghs && this.queuedswing && weapon.dwmiss > weapon.miss) {
+            // Queued HS/Cleave removes the dual wield miss penalty from off hand swings (see rollweapon).
+            // Credit the expected extra off hand damage and rage to the queued ability.
+            let e = this.hsoppEntry(this.queuedswing.name);
+            let q = this.expectedWhite(weapon, weapon.miss), d = this.expectedWhite(weapon, weapon.dwmiss);
+            e.ohswings++;
+            e.ohdmg += q.dmg - d.dmg;
+            e.ohrage += q.rage - d.rage;
+        }
         result = this.rollweapon(weapon);
 
         let dmg = weapon.dmg();
@@ -1502,11 +1768,15 @@ class Player {
         }
         if (result != RESULT.MISS && result != RESULT.DODGE) {
             if (spell instanceof Execute) {
-                this.rage = 0;
+                // Execute consumes all remaining rage (Sudden Death keeps 10). Record it as Execute's extra rage spent;
+                // spendRage does the deduction, so rage ends at exactly 0 (or 10) as in the original sim.
+                let execBefore = this.rage, execAfter = 0;
                 if (this.auras.suddendeath && this.auras.suddendeath.timer) {
-                    this.rage = 10;
+                    execAfter = 10;
                     this.auras.suddendeath.remove();
                 }
+                if (execBefore > execAfter) this.spendRage(execBefore - execAfter, spell.name, true);
+                else if (execBefore < execAfter) this.gainRage(execAfter - execBefore, 'Sudden Death', '');
             }
             if (spell instanceof Slam && this.slammainreset) {
                 if (this.spells.mortalstrike) this.spells.mortalstrike.timer = 0;
@@ -1707,6 +1977,11 @@ class Player {
             spells: this.spells,
             mh: this.mh,
             oh: this.oh,
+            ragenorm: this.ragenorm,
+            forever: this.forever,
+            ftal: this.ftal,
+            custom: this.custom,
+            variants: this.variants,
         };
     }
     log(msg) {
@@ -1728,6 +2003,7 @@ class Player {
         if (stance == 'zerk') this.auras.berserkerstance.timer = 1;
         if (stance == 'def') this.auras.defensivestance.timer = 1;
         if (stance == 'glad') this.auras.gladiatorstance.timer = 1;
+        if (this.rage > this.talents.rageretained) this.ragestancelost += this.rage - this.talents.rageretained;
         this.rage = Math.min(this.rage, this.talents.rageretained);
         
         if (this.auras["echoes" + prev]) this.auras["echoes" + prev].use();

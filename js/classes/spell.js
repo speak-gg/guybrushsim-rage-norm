@@ -62,7 +62,7 @@ class Spell {
     }
     use() {
         this.player.timer = 1500;
-        this.player.rage -= this.cost;
+        this.player.spendRage(this.cost, this.name);
         this.timer = this.cooldown * 1000;
         this.maxdelay = rng(this.player.reactionmin, this.player.reactionmax);
     }
@@ -91,7 +91,8 @@ class Bloodthirst extends Spell {
     }
     dmg() {
         let dmg;
-        dmg = this.player.stats.ap * 0.45;
+        // Forever: 35% of AP + 48 (btap 0.35, btflat 48). Classic: 45% of AP, no flat part.
+        dmg = this.player.stats.ap * this.player.variants.btap + (this.player.variants.btflat || 0);
         return dmg * this.player.stats.dmgmod * this.player.mainspelldmg;
     }
     canUse() {
@@ -102,15 +103,20 @@ class Bloodthirst extends Spell {
 class Whirlwind extends Spell {
     constructor(player, id) {
         super(player, id);
-        this.cost = 25 - player.ragecostbonus - (player.whirlwindcost || 0);
+        // Base cost 25 (Classic); the "Whirlwind rage cost" variant can change it (e.g. 22 = Forever's Raging Blows 3/3).
+        this.cost = (player.variants && player.variants.wwcost !== undefined ? player.variants.wwcost : 25) - player.ragecostbonus - (player.whirlwindcost || 0);
         this.cooldown = 10;
         this.refund = false;
     }
-    dmg() {
+    dmg(weapon) {
         if (this.player.auras.consumedrage && this.player.auras.consumedrage.timer) this.offhandhit = true;
+        // Forever (Raging Blows): Whirlwind also hits with the off hand. The off-hand hit uses the off-hand weapon,
+        // normalized speed, the off hand's damage modifier (half damage, DW Spec +25%) and its own hit/crit roll.
+        if (this.player.variants.wwoh && this.player.oh) this.offhandhit = true;
+        const w = (weapon && this.player.variants.wwoh) ? weapon : this.player.mh;
         let dmg;
-        dmg = rng(this.player.mh.mindmg + this.player.mh.bonusdmg, this.player.mh.maxdmg + this.player.mh.bonusdmg);
-        dmg += (this.player.stats.ap / 14) * this.player.mh.normSpeed + this.player.stats.moddmgdone;
+        dmg = rng(w.mindmg + w.bonusdmg, w.maxdmg + w.bonusdmg);
+        dmg += (this.player.stats.ap / 14) * w.normSpeed + this.player.stats.moddmgdone;
         return dmg * this.player.stats.dmgmod;
     }
     use() {
@@ -121,7 +127,7 @@ class Whirlwind extends Spell {
             this.player.switch(stance);
         }
         this.player.timer = 1500;
-        this.player.rage -= this.cost;
+        this.player.spendRage(this.cost, this.name);
         this.timer = this.cooldown * 1000;
         this.maxdelay = rng(this.player.reactionmin, this.player.reactionmax);
     }
@@ -162,7 +168,7 @@ class Overpower extends Spell {
         this.player.dodgetimer = 0;
         this.timer = this.cooldown * 1000;
         this.maxdelay = rng(this.player.reactionmin, this.player.reactionmax);
-        this.player.rage -= this.cost;
+        this.player.spendRage(this.cost, this.name);
     }
     canUse() {
         return !this.timer && !this.player.timer && this.cost <= this.player.rage && this.player.dodgetimer &&
@@ -211,10 +217,10 @@ class Execute extends Spell {
         }
 
         this.player.timer = 1500;
-        this.player.rage -= this.cost;
+        this.player.spendRage(this.cost, this.name);
         this.usedrage = ~~this.player.rage;
         this.totalusedrage += this.usedrage - (this.player.auras.suddendeath && this.player.auras.suddendeath.timer ? 10 : 0);
-        this.timer = 1 - (step % 1);
+        this.timer = this.player.variants.execd ? this.player.variants.execd * 1000 : 1 - (step % 1);
         this.maxdelay = rng(this.player.reactionmin, this.player.reactionmax);
     }
     step(a) {
@@ -228,6 +234,7 @@ class Execute extends Spell {
     }
     canUse() {
         return !this.player.timer && this.cost <= this.player.rage && 
+            (!this.player.variants.execd || !this.timer) &&
             (!this.swingtimer || this.player.mh.timer <= this.swingtimer) &&
             (!this.minrage || this.player.rage >= this.minrage) &&
             (step >= this.executestep || (this.player.auras.suddendeath && this.player.auras.suddendeath.timer));
@@ -247,7 +254,7 @@ class Bloodrage extends Spell {
     use() {
         this.timer = this.cooldown * 1000;
         let oldRage = this.player.rage;
-        this.player.rage = Math.min(this.player.rage + this.rage, 100);
+        this.player.gainRage(this.rage, 'Bloodrage', 'Instant', true);
         this.player.auras.bloodrage.use();
         this.maxdelay = rng(this.player.reactionmin, this.player.reactionmax);
         if (this.player.auras.consumedrage && oldRage < 60 && this.player.rage >= 60)
@@ -273,6 +280,7 @@ class HeroicStrike extends Spell {
     }
     use() {
         this.player.nextswinghs = true;
+        this.player.queuedswing = this;
         this.maxdelay = rng(this.player.reactionmin, this.player.reactionmax);
         this.unqueuetimer = 300 + rng(this.player.reactionmin, this.player.reactionmax);
     }
@@ -307,6 +315,7 @@ class Cleave extends Spell {
     }
     use() {
         this.player.nextswinghs = true;
+        this.player.queuedswing = this;
         this.maxdelay = rng(this.player.reactionmin, this.player.reactionmax);
         this.unqueuetimer = 300 + rng(this.player.reactionmin, this.player.reactionmax);
     }
@@ -346,7 +355,7 @@ class SunderArmor extends Spell {
     }
     use() {
         this.player.timer = 1500;
-        this.player.rage -= this.cost;
+        this.player.spendRage(this.cost, this.name);
         this.timer = this.cooldown * 1000;
         this.stacks = Math.min(6, this.stacks + 1);
         if (this.player.homunculi || this.player.exposed) this.stacks = 6;
@@ -397,7 +406,7 @@ class Hamstring extends Spell {
         }
 
         this.player.timer = 1500;
-        this.player.rage -= this.cost;
+        this.player.spendRage(this.cost, this.name);
         this.timer = this.cooldown * 1000;
         this.maxdelay = rng(this.player.reactionmin, this.player.reactionmax);
     }
@@ -419,7 +428,7 @@ class ThunderClap extends Spell {
     use() {
         if (!this.player.isValidStance('battle') && !this.player.furiousthunder) this.player.switch('battle');
         this.player.timer = 1500;
-        this.player.rage -= this.cost;
+        this.player.spendRage(this.cost, this.name);
         this.timer = this.cooldown * 1000;
         this.maxdelay = rng(this.player.reactionmin, this.player.reactionmax);
     }
@@ -440,7 +449,7 @@ class VictoryRush extends Spell {
     use() {
         this.stacks++;
         this.player.timer = 1500;
-        this.player.rage -= this.cost;
+        this.player.spendRage(this.cost, this.name);
         this.maxdelay = rng(this.player.reactionmin, this.player.reactionmax);
     }
     dmg() {
@@ -490,7 +499,7 @@ class BerserkerRage extends Spell {
         this.timer = this.cooldown * 1000;
         let oldRage = this.player.rage;
         if (!this.player.isValidStance('zerk')) this.player.switch('zerk');
-        this.player.rage = Math.min(this.player.rage + this.rage, 100);
+        this.player.gainRage(this.rage, 'Berserker Rage', '', true);
         this.player.auras.berserkerrage.use();
         this.maxdelay = rng(this.player.reactionmin, this.player.reactionmax);
         if (this.player.auras.consumedrage && oldRage < 60 && this.player.rage >= 60)
@@ -540,7 +549,7 @@ class RagePotion extends Spell {
     use() {
         this.timer = this.cooldown * 1000;
         let oldRage = this.player.rage;
-        this.player.rage = Math.min(this.player.rage + ~~rng(this.value1, this.value2), 100);
+        this.player.gainRage(~~rng(this.value1, this.value2), 'Rage Potion', '', true);
         this.maxdelay = rng(this.player.reactionmin, this.player.reactionmax);
         if (this.player.auras.consumedrage && oldRage < 60 && this.player.rage >= 60)
             this.player.auras.consumedrage.use();
@@ -568,7 +577,7 @@ class Slam extends Spell {
     }
     use() {
         if (this.player.freeslam) this.offhandhit = true;
-        if (!this.player.freeslam) this.player.rage -= this.cost;
+        if (!this.player.freeslam) this.player.spendRage(this.cost, this.name);
         this.maxdelay = rng(this.player.reactionmin, this.player.reactionmax);
         if (this.casttime && !this.player.freeslam) {
             this.player.mh.use();
@@ -682,7 +691,7 @@ class ShieldSlam extends Spell {
     }
     use() {
         this.player.timer = 1500;
-        if (!this.player.freeshieldslam) this.player.rage -= this.cost;
+        if (!this.player.freeshieldslam) this.player.spendRage(this.cost, this.name);
         this.timer = this.cooldown * 1000;
         this.player.freeshieldslam = false;
         this.maxdelay = rng(this.player.reactionmin, this.player.reactionmax);
@@ -709,7 +718,7 @@ class Shockwave extends Spell {
     use() {
         if (!this.player.isValidStance('def')) this.player.switch('def');
         this.player.timer = 1500;
-        this.player.rage -= this.cost;
+        this.player.spendRage(this.cost, this.name);
         this.timer = this.cooldown * 1000;
         this.maxdelay = rng(this.player.reactionmin, this.player.reactionmax);
     }
@@ -834,7 +843,7 @@ class GrilekFury extends Spell {
         this.maxdelay = rng(this.player.reactionmin, this.player.reactionmax);
 
         let oldRage = this.player.rage;
-        this.player.rage = Math.min(this.player.rage + this.rage, 100);
+        this.player.gainRage(this.rage, this.name || 'Gri\'lek\'s Charm of Might', '', true);
         if (this.player.auras.consumedrage && oldRage < 60 && this.player.rage >= 60)
             this.player.auras.consumedrage.use();
     }
@@ -972,7 +981,8 @@ class Flurry extends Aura {
     constructor(player, id) {
         super(player, id);
         this.duration = 12;
-        this.mult_stats = { haste: player.talents.flurry };
+        this.mult_stats = { haste: player.variants.flurryhaste || player.talents.flurry };
+        this.charges = player.variants.flurrycharges || 3;
     }
     proc() {
         this.stacks--;
@@ -989,7 +999,7 @@ class Flurry extends Aura {
             this.starttimer = step;
             this.player.updateHaste();
         }
-        this.stacks = 3;
+        this.stacks = this.charges;
         /* start-log */ if (this.player.logging) this.player.log(`${this.name} applied`); /* end-log */
     }
 }
@@ -1165,14 +1175,14 @@ class Felstriker extends Aura {
 class DeathWish extends Aura {
     constructor(player, id) {
         super(player, id, 'Death Wish');
-        this.duration = 30;
-        this.mult_stats = { dmgmod: 20 };
+        this.duration = player.variants.dwdur;
+        this.mult_stats = { dmgmod: player.variants.dwdmg };
         this.cooldown = player.deathwishcd ? 90 : 180;
     }
     use(a, prepull = 0) {
         if (this.timer) this.uptime += (step - this.starttimer);
         this.timer = step + this.duration * 1000 - prepull;
-        this.player.rage -= 10;
+        this.player.spendRage(10, this.name);
         this.player.timer = 1500;
         this.starttimer = step - prepull;
         this.player.updateDmgMod();
@@ -1230,7 +1240,7 @@ class MightyRagePotion extends Aura {
     use(a, prepull = 0) {
         if (this.timer) this.uptime += (step - this.starttimer);
         let oldRage = this.player.rage;
-        this.player.rage = Math.min(this.player.rage + ~~rng(this.value1, this.value2), 100);
+        this.player.gainRage(~~rng(this.value1, this.value2), 'Mighty Rage Potion', '', true);
         this.timer = step + this.duration * 1000 - prepull;
         this.starttimer = step - prepull;
         this.player.updateStrength();
@@ -1291,7 +1301,7 @@ class Berserking extends Aura {
         if (this.timer) this.uptime += (step - this.starttimer);
         this.timer = step + this.duration * 1000 - prepull;
         this.starttimer = step - prepull;
-        this.player.rage -= 5;
+        this.player.spendRage(5, this.name);
         this.player.updateHaste();
         this.maxdelay = rng(this.player.reactionmin, this.player.reactionmax);
         /* start-log */ if (this.player.logging) this.player.log(`${this.name} applied`); /* end-log */
@@ -1531,6 +1541,7 @@ class Windfury extends Aura {
         this.stacks = 2;
         this.player.updateAP();
         this.player.extraattacks++;
+        this.player.pendingwf++; // RAGE NORM: next extra attack is a Windfury swing
         /* start-log */ if (this.player.logging) this.player.log(`${this.name} applied`); /* end-log */
     }
     proc() {
@@ -1756,7 +1767,7 @@ class BloodrageAura extends Aura {
     }
     step() {
         if ((step - this.starttimer) % 1000 == 0) {
-            this.player.rage = Math.min(this.player.rage + 1, 100);
+            this.player.gainRage(1, 'Bloodrage', 'Over time (1/sec)');
             if (this.player.auras.consumedrage && this.player.rage >= 60 && this.player.rage < 81)
                 this.player.auras.consumedrage.use();
             /* start-log */ if (this.player.logging) this.player.log(`${this.name} tick`); /* end-log */
@@ -1856,7 +1867,7 @@ class BattleShout extends Aura {
         this.timer = step + this.duration * 1000;
         this.starttimer = step;
         if (!prepull) {
-            this.player.rage -= this.cost;
+            this.player.spendRage(this.cost, this.name);
             this.player.timer = 1500;
         }
         this.player.updateAP();
@@ -1966,7 +1977,7 @@ class Rend extends Aura {
             this.player.switch(stance);
         }
 
-        this.player.rage -= this.cost;
+        this.player.spendRage(this.cost, this.name);
         let basedmg = this.value1;
         if (this.player.bloodfrenzy)
             basedmg += this.value1 + ~~(this.player.stats.ap * 0.03 * this.value2);
@@ -2611,7 +2622,7 @@ class WarriorsResolve extends Aura {
     }
     use() {
         let oldRage = this.player.rage;
-        this.player.rage = Math.min(this.player.rage + 10, 100);
+        this.player.gainRage(10, 'Warrior\'s Resolve', '', true);
         if (this.player.auras.consumedrage && oldRage < 60 && this.player.rage >= 60)
             this.player.auras.consumedrage.use();
         /* start-log */ if (this.player.logging) this.player.log(`${this.name} proc`); /* end-log */

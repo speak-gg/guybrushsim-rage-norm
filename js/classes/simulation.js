@@ -37,7 +37,7 @@ const TYPE = {
 
 class SimulationWorker {
     constructor(callback_finished, callback_update, callback_error) {
-        this.worker = new Worker('./dist/js/sim-worker.min.js');
+        this.worker = new Worker('./dist/js/sim-worker.min.js?v=ragenorm10');
         this.worker.onerror = (...args) => {
             callback_error(...args);
             this.worker.terminate();
@@ -91,6 +91,22 @@ class SimulationWorkerParallel {
                 result.iterations += data.iterations;
                 result.totaldmg += data.totaldmg;
                 result.totalduration += data.totalduration;
+                result.totalragegained += data.totalragegained;
+                result.totalrageoverflow += data.totalrageoverflow;
+                result.totalragestancelost += data.totalragestancelost;
+                result.totalrageend = (result.totalrageend || 0) + (data.totalrageend || 0);
+for (let key in data.hsopp) {
+                    let a = data.hsopp[key], b = result.hsopp[key] || (result.hsopp[key] = {});
+                    for (let f in a) b[f] = (b[f] || 0) + a[f];
+                }
+                for (let key in data.ragespent) {
+                    let a = data.ragespent[key], b = result.ragespent[key] || (result.ragespent[key] = { n: 0, rage: 0, extra: 0 });
+                    b.n += a.n; b.rage += a.rage; b.extra += a.extra;
+                }
+                for (let key in data.ragesrc) {
+                    let a = data.ragesrc[key], b = result.ragesrc[key] || (result.ragesrc[key] = { n: 0, casts: 0, gen: 0, over: 0 });
+                    b.n += a.n; b.casts += a.casts; b.gen += a.gen; b.over += a.over;
+                }
                 result.mindps = Math.min(result.mindps, data.mindps);
                 result.maxdps = Math.min(result.maxdps, data.maxdps);
                 result.sumdps += data.sumdps;
@@ -195,6 +211,13 @@ class Simulation {
         batching = config.batching;
         this.idmg = 0;
         this.totaldmg = 0;
+        this.totalragegained = 0;
+        this.totalrageoverflow = 0;
+        this.totalragestancelost = 0;
+        this.totalrageend = 0;
+        this.ragesrc = {};
+        this.hsopp = {};
+        this.ragespent = {};
         this.totalduration = 0;
         this.mindps = 99999;
         this.maxdps = 0;
@@ -282,13 +305,13 @@ class Simulation {
 
             // Passive ticks
             if (next != 0 && step % 3000 == 0 && player.talents.angermanagement) {
-                player.rage = player.rage >= 99 ? 100 : player.rage + 1;
+                player.gainRage(1, 'Anger Management', '1 per 3 sec');
                 spellcheck = true;
                 if (player.auras.consumedrage && player.rage >= 60 && player.rage < 81)
                     player.auras.consumedrage.use();
             }
             if (player.vaelbuff && next != 0 && step % 1000 == 0) {
-                player.rage = player.rage >= 60 ? 100 : player.rage + 20;
+                player.gainRage(player.rage >= 60 ? Math.max(20, 100 - player.rage) : 20, 'Essence of the Red (Vaelastrasz)');
                 spellcheck = true;
                 if (player.auras.consumedrage && player.rage >= 60)
                     player.auras.consumedrage.use();
@@ -301,7 +324,7 @@ class Simulation {
                 let oldRage = player.rage;
                 let dmg = rng(player.target.mindmg, player.target.maxdmg);
                 let gained = dmg / player.rageconversion * 2.5;
-                player.rage = Math.min(player.rage + gained, 100);
+                player.gainRage(gained, 'Damage Taken', 'Boss melee hits');
                 spellcheck = true;
                 if (player.auras.consumedrage && player.rage >= 60 && oldRage < 60)
                     player.auras.consumedrage.use();
@@ -321,6 +344,7 @@ class Simulation {
                 // Attacks
                 if (player.mh.timer <= 0) {
                     this.idmg += player.attackmh(player.mh);
+                    player.wfswing = false;
                     spellcheck = true;
                 }
                 if (player.oh && player.oh.timer <= 0) {
@@ -510,6 +534,8 @@ class Simulation {
             if (player.extraattacks > 0) {
                 player.mh.timer = 0;
                 player.extraattacks--;
+                // RAGE NORM: flag the extra swing as a Windfury swing
+                if (player.pendingwf > 0) { player.pendingwf--; player.wfswing = true; }
             }
             if (player.batchedextras > 0) {
                 player.mh.timer = batching - (step % batching);
@@ -691,6 +717,22 @@ class Simulation {
             this.idmg += player.spells.themoltencore.idmg;
         }
         this.totaldmg += this.idmg;
+        this.totalragegained += player.ragegained;
+        this.totalrageoverflow += player.rageoverflow;
+        this.totalragestancelost += player.ragestancelost;
+        this.totalrageend += player.rage;
+        for (let key in player.hsopp) {
+            let a = player.hsopp[key], b = this.hsopp[key] || (this.hsopp[key] = {});
+            for (let f in a) b[f] = (b[f] || 0) + a[f];
+        }
+        for (let key in player.ragespent) {
+            let a = player.ragespent[key], b = this.ragespent[key] || (this.ragespent[key] = { n: 0, rage: 0, extra: 0 });
+            b.n += a.n; b.rage += a.rage; b.extra += a.extra;
+        }
+        for (let key in player.ragesrc) {
+            let a = player.ragesrc[key], b = this.ragesrc[key] || (this.ragesrc[key] = { n: 0, casts: 0, gen: 0, over: 0 });
+            b.n += a.n; b.casts += a.casts; b.gen += a.gen; b.over += a.over;
+        }
         this.totalduration += this.duration;
         let dps = this.idmg / this.duration;
         if (dps < this.mindps) this.mindps = dps;
@@ -716,6 +758,13 @@ class Simulation {
                 iterations: this.iterations,
                 totaldmg: this.totaldmg,
                 totalduration: this.totalduration,
+                totalragegained: this.totalragegained,
+                totalrageoverflow: this.totalrageoverflow,
+                totalragestancelost: this.totalragestancelost,
+                totalrageend: this.totalrageend,
+                ragesrc: this.ragesrc,
+                hsopp: this.hsopp,
+                ragespent: this.ragespent,
                 mindps: this.mindps,
                 maxdps: this.maxdps,
                 sumdps: this.sumdps,

@@ -12,6 +12,7 @@
 
     &.active {
         width: calc(100% - 380px);
+        overflow-y: auto;
 
         .wrapper {
             opacity: 1;
