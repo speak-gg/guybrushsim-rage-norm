@@ -61,4 +61,4 @@ See the original [CONTRIBUTING.md](CONTRIBUTING.md). The site is static, so serv
 
 ## Credits
 
-WarriorSim by [Guybrush](https://github.com/GuybrushGit/WarriorSim). Rage Norm additions by speak-gg.
+WarriorSim by [Guybrush](https://github.com/GuybrushGit/WarriorSim). Curved rage and WoW: Forever additions by speak-gg.
