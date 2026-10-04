@@ -47,7 +47,7 @@ function getGlobalsDelta() {
         gear: _gear,
         enchant: _enchant,
         runes: _runes,
-        sod: window.location.href.indexOf("classic.html") == -1
+        sod: globalThis.mode == "sod" // RAGE NORM: was a URL check that treated forever.html as SoD
     }
 }
 

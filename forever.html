@@ -3,117 +3,13 @@
 
 <head>
   <meta name="viewport" content="width=device-width">
-  <title>[RAGE NORM] Season of Discovery - Warrior DPS Sim</title>
+  <title>[RAGE NORM] WoW Forever - Warrior DPS Sim</title>
 
   <link rel="icon" type="image/x-icon" href="/WarriorSim/favicon.ico">
   <link href="dist/css/theme.default.min.css" rel="stylesheet">
   <link href="dist/css/style.css?v=ragenorm14" rel="stylesheet">
   <link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin>
   <link href="https://fonts.googleapis.com/css?family=Open+Sans:300,400,600,700,800&display=swap" rel="stylesheet">
-
-  <style>
-    .forever-redirect {
-      position: fixed;
-      inset: 0;
-      z-index: 10000;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 24px;
-      background: rgba(5, 10, 17, .82);
-    }
-
-    .forever-redirect[hidden] {
-      display: none;
-    }
-
-    .forever-redirect__panel {
-      position: relative;
-      width: min(100%, 480px);
-      padding: 40px;
-      border: 1px solid #46515b;
-      border-top: 3px solid #ffcd45;
-      border-radius: 6px;
-      background: #17232e;
-      box-shadow: 0 20px 70px rgba(0, 0, 0, .55);
-      color: #ddd;
-      font: 14px/1.6 'Open Sans', sans-serif;
-      text-align: center;
-    }
-
-    .forever-redirect__close {
-      position: absolute;
-      top: 10px;
-      right: 12px;
-      border: 0;
-      background: none;
-      color: #aeb8c0;
-      cursor: pointer;
-      font: inherit;
-      font-size: 24px;
-      line-height: 1;
-    }
-
-    .forever-redirect__image {
-      display: block;
-      width: min(100%, 180px);
-      height: auto;
-      margin: 0 auto 20px;
-    }
-
-    .forever-redirect__eyebrow {
-      margin: 0 0 8px;
-      color: #ffcd45;
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 1px;
-      text-transform: uppercase;
-    }
-
-    .forever-redirect__panel h1 {
-      margin: 0 0 12px;
-      color: #fff;
-      font-size: 26px;
-      line-height: 1.25;
-    }
-
-    .forever-redirect__panel p:not(.forever-redirect__eyebrow) {
-      margin: 0 0 24px;
-      color: #b9c2ca;
-    }
-
-    .forever-redirect__link {
-      display: inline-block;
-      padding: 11px 20px;
-      border-radius: 4px;
-      background: #ffcd45;
-      color: #17232e;
-      font-weight: 700;
-      text-decoration: none;
-    }
-
-    .forever-redirect__link:hover,
-    .forever-redirect__link:focus-visible {
-      background: #ffdb72;
-    }
-
-    .forever-redirect__continue {
-      display: block;
-      margin: 16px auto 0;
-      border: 0;
-      background: none;
-      color: #aeb8c0;
-      cursor: pointer;
-      font: inherit;
-      text-decoration: underline;
-    }
-
-    @media (max-width: 480px) {
-      .forever-redirect__panel {
-        padding: 36px 24px 28px;
-      }
-    }
-  </style>
 
   <script type="text/javascript" src="dist/js/libs/jquery-3.4.1.min.js?v=ragenorm14"></script>
   <script type="text/javascript" src="dist/js/libs/jquery.tablesorter.min.js?v=ragenorm14"></script>
@@ -124,18 +20,16 @@
   <script type="text/javascript" src="dist/js/classes/simulation.min.js?v=ragenorm14"></script>
   <script type="text/javascript" src="dist/js/classes/spell.min.js?v=ragenorm14"></script>
   <script type="text/javascript" src="dist/js/classes/weapon.min.js?v=ragenorm14"></script>
-  <script type="text/javascript" src="dist/js/data/gear_sod.min.js?v=ragenorm14"></script>
-  <script type="text/javascript" src="dist/js/data/runes.min.js?v=ragenorm14"></script>
+  <script type="text/javascript" src="dist/js/data/gear.min.js?v=ragenorm14"></script>
+  <script type="text/javascript" src="dist/js/data/enchants.min.js?v=ragenorm14"></script>
   <script type="text/javascript" src="dist/js/data/levelstats.min.js?v=ragenorm14"></script>
   <script type="text/javascript" src="dist/js/data/buffs.min.js?v=ragenorm14"></script>
-  <script type="text/javascript" src="dist/js/data/enchants.min.js?v=ragenorm14"></script>
   <script type="text/javascript" src="dist/js/data/spells.min.js?v=ragenorm14"></script>
   <script type="text/javascript" src="dist/js/data/talents.min.js?v=ragenorm14"></script>
-  <script type="text/javascript" src="dist/js/data/session_sod.min.js?v=ragenorm14"></script>
-  <script type="text/javascript" src="dist/js/data/presets.min.js?v=ragenorm14"></script>
+  <script type="text/javascript" src="dist/js/data/session.min.js?v=ragenorm14"></script>
   <script type="text/javascript" src="dist/js/globals.min.js?v=ragenorm14"></script>
-  <script type="text/javascript" src="dist/js/profiles.min.js?v=ragenorm14"></script>
   <script type="text/javascript" src="dist/js/settings.min.js?v=ragenorm14"></script>
+  <script type="text/javascript" src="dist/js/profiles.min.js?v=ragenorm14"></script>
   <script type="text/javascript" src="dist/js/stats.min.js?v=ragenorm14"></script>
   <script type="text/javascript" src="dist/js/ui.min.js?v=ragenorm14"></script>
   <script>
@@ -144,64 +38,15 @@
       e.stopPropagation(); SIM.UI.updateSession(); SIM.UI.updateSidebar();
     });
   </script>
-  <script>
-    // RAGE NORM: Season of Discovery is unchanged in this fork
-    $(function () {
-      const box = $('<div id="sodnote" style="position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;display:flex;align-items:center;justify-content:center">' +
-        '<div style="background:#222;color:#eee;border:1px solid #b33;border-radius:6px;padding:20px 24px;max-width:420px;font-size:14px;line-height:1.5;text-align:center">' +
-        '<p style="margin:0 0 14px">Season of Discovery has not been specifically updated, modified or tested in this version.</p>' +
-        '<a href="#" class="btn" id="sodnote-ok" style="display:inline-block;width:auto;padding:4px 18px">OK</a> ' +
-        '<a href="classic.html" class="btn" style="display:inline-block;width:auto;padding:4px 18px">Go to Classic</a></div></div>');
-      $('body').append(box);
-      $('#sodnote-ok').on('click', function (e) { e.preventDefault(); $('#sodnote').remove(); });
-    });
-  </script>
 
 
   <script>var whTooltips = { colorLinks: true, iconizeLinks: false, renameLinks: false, "hide": { "ilvl": false } };</script>
   <script src="https://wow.zamimg.com/widgets/power.js"></script>
-  <script>var mode = "sod";</script>
-<!-- 
-  TODO 
-  fight log btn
-  fix selected item losing dps
-  dynamic presets from text file
-  better bloodrage / berserker management?
-  more execute options?
-  new armor values
-
-
-  later:
-  sweeping strikes https://hilbert.wordpress.com/sweeping-strikes-guide/
-  item cooldowns
-  item times visualizer
-
--->
+  <script>var mode = "forever";</script>
 
   <style>.tabs .btn{width:33.34%;padding-left:2px;padding-right:2px;white-space:nowrap;font-size:12px}</style>
 </head>
 <body>
-  <div class="forever-redirect" id="forever-redirect" role="dialog" aria-modal="true" aria-labelledby="forever-redirect-title" aria-describedby="forever-redirect-description">
-    <div class="forever-redirect__panel">
-      <button class="forever-redirect__close" type="button" aria-label="Close">&times;</button>
-      <img class="forever-redirect__image" src="dist/img/simyoself.gif" alt="">
-      <h1 id="forever-redirect-title">Looking for WoW Forever?</h1>
-      <a class="forever-redirect__link" href="https://guybrushgit.github.io/ForeverSim/" target="_blank" rel="noopener noreferrer">Go to WoW Forever Sim</a>
-      <button class="forever-redirect__continue" type="button">Stay here</button>
-    </div>
-  </div>
-  <script>
-    (function () {
-      var redirectModal = document.getElementById('forever-redirect');
-      var closeButtons = redirectModal.querySelectorAll('.forever-redirect__close, .forever-redirect__continue');
-
-      closeButtons.forEach(function (button) {
-        button.addEventListener('click', function () {
-          redirectModal.hidden = true;
-        });
-      });
-    })();
-  </script>
   <div class="alerts"></div>
 
   <section class="sidebar closed">
@@ -214,8 +59,8 @@
     </div>
     <div class="tabs">
       <a href="classic.html" class="btn js-classic">Classic</a>
-      <a href="forever.html" class="btn js-forever">Forever</a>
-      <a href="." class="btn js-sod active">Season of Discovery</a>
+      <a href="forever.html" class="btn js-forever active">Forever</a>
+      <a href="." class="btn js-sod">Season of Discovery</a>
     </div>
     
     <div class="bg"></div>
@@ -247,10 +92,6 @@
         <li>
           <label>Miss</label>
           <span id="miss"></span>
-        </li>
-        <li>
-          <label>Dodge</label>
-          <span id="dodge"></span>
         </li>
         <li>
           <label>Crit</label>
@@ -289,7 +130,7 @@
           <label>Arcane Resist</label>
           <span id="arcane-resist"></span>
         </li>
-        <li class="nature-resist">
+        <li class="nature-resist hidden">
           <label>Nature Resist</label>
           <span id="nature-resist"></span>
         </li>
@@ -297,7 +138,7 @@
           <label>Frost Resist</label>
           <span id="frost-resist"></span>
         </li>
-        <li class="fire-resist">
+        <li class="fire-resist hidden">
           <label>Fire Resist</label>
           <span id="fire-resist"></span>
         </li>
@@ -329,13 +170,11 @@
       <div class="manual"><a href="https://github.com/GuybrushGit/WarriorSim" target="_blank">Original sim (Guybrush)</a></div>
       <div class="manual"><a href="https://github.com/speak-gg/guybrushsim-rage-norm" target="_blank">This fork (Rage Norm)</a></div>
     </div>
-    
   </section>
 
   <section class="profiles">
     <a href="#" class="btn-close"></a>
     <div class="wrapper">
-      <div class="presets"></div>
       <div class="container"></div>
     </div>
   </section>
@@ -355,13 +194,13 @@
         <ul>
           <li>
             <label>Level</label>
-            <input type="range" name="slider-level" min="1" max="60" value="25" class="slider">
-            <input type="text" name="level" value="25" data-numberonly="true">
+            <input type="range" name="slider-level" min="1" max="60" value="60" class="slider">
+            <input type="text" name="level" value="60" data-numberonly="true">
           </li>
           <li>
             <label>Target Level</label>
-            <input type="range"  name="slider-targetlevel" min="1" max="63" value="28" class="slider">
-            <input type="text" name="targetlevel" value="28" data-numberonly="true">
+            <input type="range"  name="slider-targetlevel" min="1" max="63" value="63" class="slider">
+            <input type="text" name="targetlevel" value="63" data-numberonly="true">
           </li>
           <li>
             <label>Race</label>
@@ -398,7 +237,7 @@
           </li>
           <li>
             <label>Target Magic Resistance</label>
-            <input type="text" name="targetresistance" value="10" data-numberonly="true">
+            <input type="text" name="targetresistance" value="24" data-numberonly="true">
           </li>
           <li>
             <label>Target Base Armor</a></label>
@@ -451,9 +290,9 @@
           <li>
             <label>Bleed Reduction</label>
             <select dir="rtl" name="bleedreduction">
+              <option value="1">None</option>
               <option value="0.8">20%</option>
               <option value="0">100%</option>
-              <option value="1">None</option>
             </select>
           </li>
           <li>
@@ -463,69 +302,19 @@
               <option value="No">No</option>
             </select>
           </li>
-          <li style="border-top:1px solid #d9a33b; margin-top:6px; padding-top:6px">
-            <label style="color:#d9a33b" title="Bloodthirst damage = AP x this. Classic and Forever: 0.45.">Bloodthirst AP coeff</label>
-            <input type="text" name="varbtap" value="0.45">
-          </li>
-          <li>
-            <label style="color:#d9a33b" title="Flat damage added to Bloodthirst. Default 0.">Bloodthirst flat dmg</label>
-            <input type="text" name="varbtflat" value="0">
-          </li>
-          <li>
-            <label style="color:#d9a33b" title="Yes = Whirlwind also hits with the off hand (WoW: Forever). Each hit rolls separately with no dual-wield miss penalty; the off-hand hit cannot proc Windfury.">Whirlwind off-hand hit</label>
-            <select dir="rtl" name="varwwoh">
-              <option value="0">No</option>
-              <option value="1">Yes</option>
-            </select>
-          </li>
-          <li>
-            <label style="color:#d9a33b" title="Whirlwind base rage cost. Classic 25. Forever with Raging Blows: 22.">Whirlwind rage cost</label>
-            <input type="text" name="varwwcost" value="25">
-          </li>
-          <li>
-            <label style="color:#d9a33b" title="Flurry haste %. 0 = use talent rank (30% at 5/5). Forever: 25.">Flurry haste %</label>
-            <input type="text" name="varflurryhaste" value="0">
-          </li>
-          <li>
-            <label style="color:#d9a33b" title="Number of swings Flurry lasts. Classic 3.">Flurry charges</label>
-            <input type="text" name="varflurrycharges" value="3">
-          </li>
-          <li>
-            <label style="color:#d9a33b" title="Death Wish damage bonus %. Classic 20.">Death Wish dmg %</label>
-            <input type="text" name="vardwdmg" value="20">
-          </li>
-          <li>
-            <label style="color:#d9a33b" title="Death Wish duration in seconds. Classic 30.">Death Wish duration (s)</label>
-            <input type="text" name="vardwdur" value="30">
-          </li>
-          <li>
-            <label style="color:#d9a33b" title="Execute cooldown in seconds. 0 = no cooldown (Classic).">Execute cooldown (s)</label>
-            <input type="text" name="varexecd" value="0">
-          </li>
           <li style="border-top:1px solid #69c; margin-top:6px; padding-top:6px">
-            <label style="color:#69c" title="Unbridled Wrath proc chance at 5/5, scaled by talent points. Classic 40, Forever 60.">UW % (5/5)</label>
-            <input type="text" name="uwpct" value="40">
+            <label style="color:#69c;width:100%;white-space:normal">WoW: Forever rules (beta, 1 Oct 2026): Forever v2 rage, Bloodthirst 45% AP, Flurry 25% for 3 swings, Whirlwind hits with both hands, Unbridled Wrath 60% (white swings only), Dual Wield Specialization +50% off-hand rage, Death Wish 20% / 30 s, no Execute cooldown, Deep Wounds stacks (each crit adds main hand weapon damage, no AP, over the next 4 ticks; ticks cannot crit).</label>
           </li>
           <li>
-            <label style="color:#69c" title="Classic: procs on landed white swings and Heroic Strike/Cleave. Forever: landed white swings only.">UW mechanics</label>
-            <select dir="rtl" name="uwmech">
-              <option value="classic">Classic</option>
-              <option value="forever">Forever</option>
-            </select>
+            <label style="color:#69c" title="22 with Raging Blows (3 less), 25 without.">Whirlwind rage cost</label>
+            <input type="text" name="varwwcost" value="22">
           </li>
           <li>
-            <label style="color:#69c" title="Classic: each crit refreshes one bleed (60% of main hand weapon damage incl. attack power over 12 s). Forever: each crit adds a new instance (60% of main hand weapon damage, no attack power, snapshotted) paid over the next 4 ticks of the running 3 s schedule; instances stack and ticks cannot crit.">Deep Wounds mechanics</label>
-            <select dir="rtl" name="dwmech">
-              <option value="classic">Classic</option>
-              <option value="forever">Forever</option>
-            </select>
-          </li>
-          <li>
-            <label style="color:#69c" title="Extra off-hand hit from Forever's Furious Precision talent: 4 / 7 / 10 at 1 / 2 / 3 points. 0 = none (Classic).">Furious Precision OH hit %</label>
-            <input type="text" name="fphit" value="0">
+            <label style="color:#69c" title="Off-hand hit from Furious Precision: 4 / 7 / 10 at 1 / 2 / 3 points. 0 = not talented.">Furious Precision OH hit %</label>
+            <input type="text" name="fphit" value="10">
           </li>
           <li style="border-top:1px solid #6c6; margin-top:6px; padding-top:6px">
-            <label style="color:#6c6" title="Added on top of gear, buffs and talents. Shows up in the sidebar Hit / Crit lines.">Bonus Hit %</label>
+            <label style="color:#6c6" title="Added on top of gear, buffs and talents.">Bonus Hit %</label>
             <input type="text" name="custombonushit" value="0">
           </li>
           <li>
@@ -535,57 +324,6 @@
           <li>
             <label style="color:#6c6" title="Subtracted from the boss's chance to dodge your attacks. Use 100 to remove dodges entirely.">Boss Dodge Reduction %</label>
             <input type="text" name="customdodgered" value="0">
-          </li>
-          <li style="border-top:1px solid #f77; margin-top:6px; padding-top:6px; flex-wrap:wrap">
-            <label style="color:#f77;width:100%" title="Formula for rage from white hits.">Rage Formula</label>
-            <select dir="rtl" name="ragenorm" style="flex:1 0 100%;margin-top:3px">
-              <option value="Off">Classic</option>
-              <option value="F2">Forever v2</option>
-              <option value="On">Curved</option>
-              <option value="OnC">Curved + Modified Classic rage coefficient</option>
-            </select>
-          </li>
-          <li style="border-top:1px solid #c9c; margin-top:6px; padding-top:6px">
-            <label style="color:#c9c;width:100%;white-space:normal">Curved formula settings (only used for Curved and Curved + Modified Classic rage coefficient)</label>
-          </li>
-          <li>
-            <label style="color:#c9c" title="Curved + Modified Classic rage coefficient only. Coefficient c in Classic rage = c x dmg / 230.6 for the part of the curve below the threshold (default 7.5 = Classic). The threshold damage and the cap stay the same.">Modified Classic rage coefficient (7.5 default)</label>
-            <input type="text" name="ragenormcoef" value="7.5">
-          </li>
-          <li>
-            <label style="color:#c9c" title="Classic rage up to k x current swing time (damage). Off hand x OH factor, crits x2.">RN threshold k</label>
-            <input type="text" name="ragenormk" value="171">
-          </li>
-          <li>
-            <label style="color:#c9c" title="Per-hit rage cap = cap x current swing time. Off hand x OH factor, crits x2.">RN cap (rage/hasted s)</label>
-            <input type="text" name="ragenormcap" value="13">
-          </li>
-          <li>
-            <label style="color:#c9c" title="Sharpness of the bend into the cap. Higher = stays Classic longer, bends harder.">RN sharpness p</label>
-            <input type="text" name="ragenormp" value="3">
-          </li>
-          <li>
-            <label style="color:#c9c" title="Off-hand multiplier on threshold and cap.">RN off-hand factor</label>
-            <input type="text" name="ragenormoh" value="0.625">
-          </li>
-          <li>
-            <label style="color:#c9c" title="Windfury extra-attack swings get this share of the rage.">RN Windfury factor</label>
-            <input type="text" name="ragenormwf" value="0.75">
-          </li>
-          <li>
-            <label style="color:#c9c" title="Shrink the per-hit cap when a hand's white attack table is stronger than the reference table (M_ref). Recklessness and Elune's Light crit are ignored.">RN table cap (M_ref)</label>
-            <select dir="rtl" name="ragenormtable">
-              <option value="Off">Off</option>
-              <option value="On">On</option>
-            </select>
-          </li>
-          <li>
-            <label style="color:#c9c" title="Reference table strength for the main hand: hit + 2 x crit + glance + 0.75 x dodge (T3 + WB = 1.266).">RN M_ref main hand</label>
-            <input type="text" name="ragenormmrefmh" value="1.266">
-          </li>
-          <li>
-            <label style="color:#c9c" title="Reference table strength for the off hand.">RN M_ref off hand</label>
-            <input type="text" name="ragenormmrefoh" value="1.398">
           </li>
         </ul>
       </article>
@@ -609,7 +347,7 @@
         </div>
       </article>
 
-      <article class="filter" style="display: none">
+      <article class="filter">
         <label class="active">Gear Filter</label>
         <ul class="sources">
           <li data-id="quest">Quest</li>
@@ -661,19 +399,13 @@
           <li data-id="other">Other</li>
         </ul>
         <ul class="phases">
-          <li data-id="1" class="active" data-sources="onyxia,mc">P1</li>
-          <li data-id="2" class="active" data-sources="">P2</li>
-          <li data-id="3" class="active" data-sources="bwl">P3</li>
-          <li data-id="4" class="active" data-sources="zg">P4</li>
+          <li data-id="1" data-sources="onyxia,mc">P1</li>
+          <li data-id="2" data-sources="">P2</li>
+          <li data-id="3" data-sources="bwl">P3</li>
+          <li data-id="4" data-sources="zg">P4</li>
           <li data-id="5" data-sources="aq20,aq40">P5</li>
           <li data-id="6" data-sources="naxx">P6</li>
         </ul>
-      </article>
-
-      <article class="runes">
-        <label class="active">Runes</label>
-        <div id="runes-area">
-        </div>
       </article>
 
     </div>
@@ -838,7 +570,7 @@
         </li>
       </ul>
     </nav>
- 
+
     <div class="table-container"></div>
     <div class="button-container">
       <a href="#" class="btn js-editmode">SHOW / HIDE ROWS</a>
@@ -850,74 +582,6 @@
 
     <progress value="0" max="100"></progress>
   </section>
-
-  <div class="modal">
-    <div class="btn-close"></div>
-    <div class="wrapper">
-      <div class="row head">
-        <p>Rage</p>
-        <p>Time</p>
-        <p>Event</p>
-      </div>
-      <div class="table">
-        <div class="row">
-          <p>12</p>
-          <p>0s</p>
-          <p>attack!</p>
-        </div>
-        <div class="row">
-          <p>12</p>
-          <p>0s</p>
-          <p>attack!</p>
-        </div>
-        <div class="row">
-          <p>12</p>
-          <p>0s</p>
-          <p>attack!</p>
-        </div>
-        <div class="row">
-          <p>12</p>
-          <p>0s</p>
-          <p>attack!</p>
-        </div>
-        <div class="row">
-          <p>12</p>
-          <p>0s</p>
-          <p>attack!</p>
-        </div>
-        <div class="row">
-          <p>12</p>
-          <p>0s</p>
-          <p>attack!</p>
-        </div>
-        <div class="row">
-          <p>12</p>
-          <p>0s</p>
-          <p>attack!</p>
-        </div>
-        <div class="row">
-          <p>12</p>
-          <p>0s</p>
-          <p>attack!</p>
-        </div>
-        <div class="row">
-          <p>12</p>
-          <p>0s</p>
-          <p>attack!</p>
-        </div>
-        <div class="row">
-          <p>12</p>
-          <p>0s</p>
-          <p>attack!</p>
-        </div>
-        <div class="row">
-          <p>12</p>
-          <p>0s</p>
-          <p>attack!</p>
-        </div>
-      </div>
-    </div>
-  </div>
 
 
   <script>

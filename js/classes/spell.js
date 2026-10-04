@@ -1106,6 +1106,60 @@ class OldDeepWounds extends Aura {
     }
 }
 
+// RAGE NORM: WoW: Forever Deep Wounds (beta logs).
+// - Based on main hand weapon damage only (no attack power): 20/40/60% of the average weapon damage per application.
+// - Each crit adds a new instance that pays out over the next 4 ticks of the shared 3 s tick schedule
+//   (the schedule is not reset). Instances stack: overlapping ticks pay every active instance.
+// - Ticks cannot crit. The damage of an instance is snapshotted when it is applied.
+class ForeverDeepWounds extends Aura {
+    constructor(player, id, adjacent) {
+        super(player, id, 'Deep Wounds' + (adjacent ? ' ' + adjacent : ''));
+        this.duration = 12;
+        this.idmg = 0;
+        this.totaldmg = 0;
+        this.inst = [];
+    }
+    pertick() {
+        const w = this.player.mh;
+        const avg = (w.mindmg + w.maxdmg) / 2 + w.bonusdmg;
+        return avg * w.modifier * this.player.stats.dmgmod * this.player.talents.deepwounds * this.player.bleedmod / 4;
+    }
+    step() {
+        while (this.timer && step >= this.nexttick) {
+            let dmg = 0;
+            for (const i of this.inst) { dmg += i.per; i.left--; }
+            this.inst = this.inst.filter(i => i.left > 0);
+            this.idmg += dmg;
+            this.totaldmg += dmg;
+            /* start-log */ if (this.player.logging) this.player.log(`${this.name} tick for ${dmg.toFixed(2)} (${this.inst.length} instance(s) left)`); /* end-log */
+            if (this.inst.length) {
+                this.nexttick += 3000;
+            }
+            else {
+                this.uptime += (step - this.starttimer);
+                this.timer = 0;
+                this.nexttick = 0;
+                this.firstuse = false;
+                this.player.updateDmgMod();
+                /* start-log */ if (this.player.logging) this.player.log(`${this.name} removed`); /* end-log */
+            }
+        }
+    }
+    use() {
+        if (!this.timer) {
+            this.inst = [];
+            this.nexttick = step + 3000;
+        }
+        else this.uptime += (step - this.starttimer);
+        this.starttimer = step;
+        this.inst.push({ per: this.pertick(), left: 4 });
+        const maxleft = Math.max(...this.inst.map(i => i.left));
+        this.timer = this.nexttick + (maxleft - 1) * 3000 + 1;
+        this.player.updateDmgMod();
+        /* start-log */ if (this.player.logging) this.player.log(`${this.name} applied (${this.inst.length} instance(s))`); /* end-log */
+    }
+}
+
 class Crusader extends Aura {
     constructor(player, id) {
         super(player, id);

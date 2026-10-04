@@ -827,7 +827,10 @@ SIM.UI = {
         if (va.btap != 0.45 || va.btflat) vl.push('BT ' + va.btap + '×AP' + (va.btflat ? ' + ' + va.btflat : ''));
         if (va.wwoh) vl.push('WW hits OH');
         if (va.wwcost != 25) vl.push('WW ' + va.wwcost + ' rage');
-        if (player.ftal && !player.forever) vl.push('Forever talents: UW ' + player.ftal.uw + '%, Furious Precision OH +' + player.ftal.ohhit + '% hit');
+        const uw = player.uwcfg || { pct: 40, mech: 'classic' };
+        if (mode != 'forever' && (uw.pct != 40 || uw.mech != 'classic')) vl.push('UW ' + uw.pct + '% (' + (uw.mech == 'forever' ? 'white only' : 'Classic') + ')');
+        if (mode != 'forever' && player.dwmech == 'forever') vl.push('Deep Wounds: Forever (stacks)');
+        if (mode != 'forever' && player.fphit) vl.push('Furious Precision OH +' + player.fphit + '% hit');
         if ((va.flurryhaste && va.flurryhaste != player.talents.flurry) || va.flurrycharges != 3) vl.push('Flurry ' + (va.flurryhaste || player.talents.flurry) + '%/' + va.flurrycharges + ' swings');
         if (va.dwdmg != 20 || va.dwdur != 30) vl.push('DW ' + va.dwdmg + '%/' + va.dwdur + 's');
         if (va.execd) vl.push('Execute ' + va.execd + 's CD');
@@ -839,6 +842,7 @@ SIM.UI = {
         view.sidebar.find('#customstats').html(csOn ? `+${cs.hit}% hit · +${cs.crit}% crit · −${cs.dodgered}% dodge` : '');
         const rn = player.ragenorm;
         const fv = player.forever;
+        if (mode == 'forever') view.sidebar.find('#variantsrow').toggle(false);
         if (fv) {
             const oh = ['x2', 'x1', 'x1.5'][fv.ver], cm = ['x1', 'x1.75', 'x2'][fv.ver];
             view.sidebar.find('#ragenormstatus').html('<b style="color:#fff;background:#36c;padding:0 5px;border-radius:3px">FOREVER v' + fv.ver + '</b>');
@@ -847,17 +851,18 @@ SIM.UI = {
                 'rate 3.46 MH · 1.73 OH (' + oh + ' DW Spec) · 4.5 2H',
                 'Crit ' + cm + ' · Miss / dodge: 0 · damage ignored',
                 'Haste: full rage per swing · Windfury: full',
-                'UW ' + fv.uw + '% (white only) · Furious Precision OH +' + fv.ohhit + '% hit',
+                'UW ' + (player.uwcfg || {}).pct + '% (' + ((player.uwcfg || {}).mech == 'forever' ? 'white only' : 'Classic') + ') · Furious Precision OH +' + (player.fphit || 0) + '% hit',
+                ...(mode == 'forever' ? ['BT 45% AP · Flurry 25%/3 · WW both hands, ' + ((player.variants || {}).wwcost) + ' rage · DW 20%/30s', 'Deep Wounds: stacks, weapon dmg only'] : []),
             ].map(l => '<div style="float:none">' + l + '</div>').join(''));
         } else {
         view.sidebar.find('#ragenormstatus').html(rn
-            ? '<b style="color:#fff;background:#b33;padding:0 5px;border-radius:3px">NORMALIZED</b>'
+            ? '<b style="color:#fff;background:#b33;padding:0 5px;border-radius:3px">' + (rn.modc ? 'CURVED + MOD. CLASSIC COEF.' : 'CURVED') + '</b>'
             : 'Classic');
         view.sidebar.find('#ragenormformula').toggle(!!rn).html(rn ? [
-            'L = 7.5 × dmg ÷ 230.6 &nbsp;(Classic rage)',
+            'L = ' + (rn.modc ? rn.coef : 7.5) + ' × dmg ÷ 230.6 &nbsp;(' + (rn.modc ? 'modified ' : '') + 'Classic rage)',
             't = weapon speed ÷ haste &nbsp;(current swing)',
             'f = ' + rn.oh + ' off hand, ×2 crit',
-            'R₀ = 7.5 × ' + rn.k + ' × t × f ÷ 230.6',
+            'R₀ = ' + (rn.modc ? rn.coef : 7.5) + ' × ' + rn.k + ' × t × f ÷ 230.6',
             'C = ' + rn.cap + ' × t × f',
             'R = L &nbsp;if L ≤ R₀',
             'R = R₀ + x ÷ (1 + (x ÷ (C − R₀))<sup>' + rn.p + '</sup>)<sup>1/' + rn.p + '</sup>, &nbsp;x = L − R₀',
@@ -978,8 +983,8 @@ SIM.UI = {
         obj.filter_epic = view.main.find('#filter_epic').hasClass('active');
         obj.bleedreduction = view.fight.find('select[name="bleedreduction"]').val();
         obj.spellqueueing = view.fight.find('select[name="spellqueueing"]').val();
-        for (const n of ['varbtap','varbtflat','varwwoh','varwwcost','varfortal','varflurryhaste','varflurrycharges','vardwdmg','vardwdur','varexecd'])
-            obj[n] = view.fight.find('input[name="' + n + '"]').val();
+        for (const n of ['varbtap','varbtflat','varwwoh','varwwcost','varflurryhaste','varflurrycharges','vardwdmg','vardwdur','varexecd','uwpct','uwmech','dwmech','fphit','ragenormcoef'])
+            obj[n] = view.fight.find('[name="' + n + '"]').val();
         obj.custombonushit = view.fight.find('input[name="custombonushit"]').val();
         obj.custombonuscrit = view.fight.find('input[name="custombonuscrit"]').val();
         obj.customdodgered = view.fight.find('input[name="customdodgered"]').val();
@@ -992,8 +997,6 @@ SIM.UI = {
         obj.ragenormtable = view.fight.find('select[name="ragenormtable"]').val();
         obj.ragenormmrefmh = view.fight.find('input[name="ragenormmrefmh"]').val();
         obj.ragenormmrefoh = view.fight.find('input[name="ragenormmrefoh"]').val();
-        obj.foreveruw = view.fight.find('input[name="foreveruw"]').val();
-        obj.foreverohhit = view.fight.find('input[name="foreverohhit"]').val();
         
 
         let _buffs = [], _rotation = [], _talents = [], _sources = [], _phases = [], _gear = {}, _enchant = {}, _runes = {}, _resistance = {};

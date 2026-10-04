@@ -37,7 +37,18 @@ const TYPE = {
 
 class SimulationWorker {
     constructor(callback_finished, callback_update, callback_error) {
-        this.worker = new Worker('./dist/js/sim-worker.min.js?v=ragenorm10');
+        // RAGE NORM: browsers block Web Workers when the page is opened straight from disk (file://).
+        // In that case run the simulation on the page itself instead of failing silently.
+        try {
+            this.worker = new Worker('./dist/js/sim-worker.min.js?v=ragenorm14');
+        } catch (e) {
+            this.inline = { callback_finished, callback_update, callback_error };
+            if (!SimulationWorker.warned && typeof SIM !== 'undefined' && SIM.UI && SIM.UI.addAlert) {
+                SimulationWorker.warned = true;
+                SIM.UI.addAlert('Opened as a local file: simulating on the page (slower, the page may pause). Use the website or a local server for full speed.');
+            }
+            return;
+        }
         this.worker.onerror = (...args) => {
             callback_error(...args);
             this.worker.terminate();
@@ -64,6 +75,27 @@ class SimulationWorker {
     }
 
     start(params) {
+        if (this.inline) {
+            const cb = this.inline;
+            setTimeout(() => {
+                try {
+                    const p = structuredClone(params);
+                    const player = new Player(...p.player);
+                    const sim = new Simulation(player, (report) => {
+                        if (p.fullReport) {
+                            report.player = player.serializeStats();
+                            report.spread = sim.spread;
+                        }
+                        cb.callback_finished(structuredClone(report));
+                    }, () => {}, p.sim);
+                    sim.startSync();
+                } catch (e) {
+                    console.error(e);
+                    cb.callback_error(e && e.message ? e.message : String(e));
+                }
+            }, 0);
+            return;
+        }
         params.globals = getGlobalsDelta();
         this.worker.postMessage(params);
     }

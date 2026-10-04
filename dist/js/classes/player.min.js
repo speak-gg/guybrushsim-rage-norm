@@ -1,5 +1,9 @@
 class Player {
     static getConfig(base) {
+        // Forever tab (mode "forever"): fixed WoW: Forever rules; only a few inputs are exposed.
+        const isF = globalThis.mode === 'forever';
+        const num = (n, d) => (v => isNaN(v) ? d : v)(parseFloat($('[name="' + n + '"]').val()));
+        const rf = isF ? 'F2' : $('select[name="ragenorm"]').val();
         return {
             level: $('input[name="level"]').val(),
             race: $('select[name="race"]').val(),
@@ -9,25 +13,34 @@ class Player {
             adjacent: parseInt($('input[name="adjacent"]').val()),
             mode: globalThis.mode,
             spellqueueing: $('select[name="spellqueueing"]').val() == "Yes",
-            variants: {
-                btap: (v => isNaN(v) ? 0.45 : v)(parseFloat($('input[name="varbtap"]').val())),
-                btflat: parseFloat($('input[name="varbtflat"]').val()) || 0,
-                wwoh: parseInt($('input[name="varwwoh"]').val()) || 0,
-                wwcost: (v => isNaN(v) ? 25 : v)(parseFloat($('input[name="varwwcost"]').val())),
-                fortal: parseInt($('input[name="varfortal"]').val()) || 0,
+            variants: isF ? {
+                btap: 0.45, btflat: 0, wwoh: 1, wwcost: num('varwwcost', 22),
+                flurryhaste: 25, flurrycharges: 3, dwdmg: 20, dwdur: 30, execd: 0,
+            } : {
+                btap: num('varbtap', 0.45),
+                btflat: num('varbtflat', 0),
+                wwoh: $('[name="varwwoh"]').val() == '1' ? 1 : 0,
+                wwcost: num('varwwcost', 25),
                 flurryhaste: parseFloat($('input[name="varflurryhaste"]').val()) || 0,
                 flurrycharges: parseInt($('input[name="varflurrycharges"]').val()) || 3,
-                dwdmg: (v => isNaN(v) ? 20 : v)(parseFloat($('input[name="vardwdmg"]').val())),
+                dwdmg: num('vardwdmg', 20),
                 dwdur: parseFloat($('input[name="vardwdur"]').val()) || 30,
                 execd: parseFloat($('input[name="varexecd"]').val()) || 0,
             },
+            // Unbridled Wrath: proc % at 5/5 (Classic 40, Forever 60) and mechanics (Classic: white + Heroic Strike/Cleave; Forever: white swings only)
+            uw: isF ? { pct: 60, mech: 'forever' } : { pct: num('uwpct', 40), mech: $('select[name="uwmech"]').val() == 'forever' ? 'forever' : 'classic' },
+            // Furious Precision (Forever Fury talent): flat off-hand hit %
+            fphit: num('fphit', isF ? 10 : 0),
+            dwmech: isF ? 'forever' : ($('select[name="dwmech"]').val() == 'forever' ? 'forever' : 'classic'),
             custom: {
                 hit: parseFloat($('input[name="custombonushit"]').val()) || 0,
                 crit: parseFloat($('input[name="custombonuscrit"]').val()) || 0,
                 dodgered: parseFloat($('input[name="customdodgered"]').val()) || 0,
             },
             ragenorm: {
-                on: $('select[name="ragenorm"]').val() == "On",
+                on: rf == "On" || rf == "OnC",
+                modc: rf == "OnC",
+                coef: num('ragenormcoef', 7.5),
                 k: parseFloat($('input[name="ragenormk"]').val()) || 171,
                 cap: parseFloat($('input[name="ragenormcap"]').val()) || 13,
                 p: parseFloat($('input[name="ragenormp"]').val()) || 3,
@@ -37,16 +50,8 @@ class Player {
                 mrefmh: parseFloat($('input[name="ragenormmrefmh"]').val()) || 1.266,
                 mrefoh: parseFloat($('input[name="ragenormmrefoh"]').val()) || 1.398,
             },
-            // FOREVER rage: rate x weapon speed per landed white swing (Marrow's compendium). v0/v1/v2 differ in off-hand and crit multipliers.
-            forever: (v => /^F[012]$/.test(v) ? {
-                ver: parseInt(v[1]),
-                uw: (x => isNaN(x) ? 60 : x)(parseFloat($('input[name="foreveruw"]').val())),
-                ohhit: (x => isNaN(x) ? 10 : x)(parseFloat($('input[name="foreverohhit"]').val())),
-            } : null)($('select[name="ragenorm"]').val()),
-            ftal: {
-                uw: (x => isNaN(x) ? 60 : x)(parseFloat($('input[name="foreveruw"]').val())),
-                ohhit: (x => isNaN(x) ? 10 : x)(parseFloat($('input[name="foreverohhit"]').val())),
-            },
+            // FOREVER rage (v2): rate x weapon speed per landed white swing (Marrow's compendium)
+            forever: rf == 'F2' ? { ver: 2 } : null,
             target: {
                 level: parseInt($('input[name="targetlevel"]').val()),
                 basearmor: parseInt($('select[name="targetbasearmor"]').val() || $('input[name="targetcustomarmor"]').val()),
@@ -104,7 +109,8 @@ class Player {
         this.ragenorm = !this.forever && config.ragenorm && config.ragenorm.on ? config.ragenorm : null;
         // Forever talents (Unbridled Wrath %, white swings only; Dual Wield Spec off-hand hit). Always on in Forever rage modes;
         // with Classic or Curved rage, on when the "Forever talents" variant is 1.
-        this.ftal = this.forever ? this.forever : (config.variants && config.variants.fortal && config.ftal ? config.ftal : null);
+        this.uwcfg = config.uw || { pct: 40, mech: 'classic' }; this.dwmech = config.dwmech == 'forever' ? 'forever' : 'classic';
+        this.fphit = config.fphit || 0;
         this.pendingwf = 0;
         this.wfswing = false;
         this.target.misschance = this.getTargetSpellMiss();
@@ -207,10 +213,10 @@ class Player {
         this.addRunes();
         this.setSkills();
         if (this.talents.flurry) this.auras.flurry = new Flurry(this);
-        if (this.talents.deepwounds) this.auras.deepwounds = this.mode == "sod" ? new DeepWounds(this) : new OldDeepWounds(this);
+        if (this.talents.deepwounds) this.auras.deepwounds = this.mode == "sod" ? new DeepWounds(this) : this.dwmech == "forever" ? new ForeverDeepWounds(this) : new OldDeepWounds(this);
         if (this.adjacent && this.talents.deepwounds) {
             for (let i = 2; i <= (this.adjacent + 1); i++)
-                this.auras['deepwounds' + i] = this.mode == "sod" ? new DeepWounds(this, null, i) : new OldDeepWounds(this, null, i);
+                this.auras['deepwounds' + i] = this.mode == "sod" ? new DeepWounds(this, null, i) : this.dwmech == "forever" ? new ForeverDeepWounds(this, null, i) : new OldDeepWounds(this, null, i);
         }
 
         this.spells.stanceswitch = new StanceSwitch(this);
@@ -848,8 +854,8 @@ class Player {
             this.oh.dodge = this.getDodgeChance(this.oh);
             // FOREVER: Furious Precision (Fury, 4/7/10% off-hand hit). Every Fury build takes 3/3 = 10.
             // (Dual Wield Specialization lost its off-hand hit in the 1 Oct 2026 beta build.)
-            if (this.ftal && this.ftal.ohhit) {
-                const b = this.ftal.ohhit;
+            if (this.fphit) {
+                const b = this.fphit;
                 this.oh.miss = Math.max(this.oh.miss - b, 0);
                 this.oh.dwmiss = Math.max(this.oh.dwmiss - b, 0);
             }
@@ -1118,16 +1124,11 @@ class Player {
         let gainedBefore = this.ragegained;
         let hand = weapon && weapon.offhand ? 'Off Hand' : 'Main Hand';
         let resname = result == RESULT.CRIT ? 'Crit' : result == RESULT.GLANCE ? 'Glance' : result == RESULT.DODGE ? 'Dodge' : result == RESULT.MISS ? 'Miss' : 'Hit';
-        if (this.ftal) {
-            // FOREVER: Unbridled Wrath only from landed white swings (not Heroic Strike / Cleave); uw = % at 5/5
-            if (!spell && result != RESULT.MISS && result != RESULT.DODGE && this.talents.umbridledwrath && rng10k() < this.foreverUW() * 100)
-                this.gainRage(1, 'Unbridled Wrath', hand + ' auto attack');
-        }
-        else if (!spell || spell instanceof HeroicStrike || spell instanceof Cleave) {
-            if (result != RESULT.MISS && result != RESULT.DODGE && this.talents.umbridledwrath && rng10k() < this.talents.umbridledwrath * 100) {
-                this.gainRage(1, 'Unbridled Wrath', spell ? spell.name : hand + ' auto attack');
-            }
-        }
+        // Unbridled Wrath. Classic mechanics: white swings and Heroic Strike/Cleave. Forever mechanics: white swings only.
+        if (this.talents.umbridledwrath && result != RESULT.MISS && result != RESULT.DODGE &&
+            (!spell || (this.uwcfg.mech != 'forever' && (spell instanceof HeroicStrike || spell instanceof Cleave))) &&
+            rng10k() < this.foreverUW() * 100)
+            this.gainRage(1, 'Unbridled Wrath', spell ? spell.name : hand + ' auto attack');
         if (spell) {
             if (spell instanceof Execute) spell.result = result;
             if (result == RESULT.MISS || result == RESULT.DODGE) {
@@ -1166,7 +1167,8 @@ class Player {
     // Windfury extra-attack swings get x wf.
     normRage(dmg, weapon, crit, wf) {
         const n = this.ragenorm;
-        const s = 7.5 * this.ragemod / this.rageconversion;
+        // Curved + modified Classic: the Classic part uses coefficient n.coef instead of 7.5 (threshold damage k unchanged, cap unchanged)
+        const s = (n.modc ? n.coef : 7.5) * this.ragemod / this.rageconversion;
         const L = Math.max(dmg, 0) * s;
         const t = weapon.speed / this.stats.haste;
         const f = (weapon.offhand ? n.oh : 1) * (crit ? 2 : 1);
@@ -1180,7 +1182,7 @@ class Player {
         }
         let r;
         if (L <= R0) r = L;
-        else if (C <= R0) r = R0;
+        else if (C <= R0) r = Math.min(L, C);
         else {
             const x = L - R0;
             r = R0 + x / Math.pow(1 + Math.pow(x / (C - R0), n.p), 1 / n.p);
@@ -1200,7 +1202,7 @@ class Player {
     }
     // FOREVER: Unbridled Wrath proc chance in %, scaled from the 5/5 value (60 = fixed tooltip, 36 = beta bug)
     foreverUW() {
-        return this.talents.umbridledwrath / 40 * this.ftal.uw;
+        return this.talents.umbridledwrath / 40 * this.uwcfg.pct;
     }
     // RAGE NORM: white attack-table strength M = P(hit) + 2 P(crit) + P(glance) + 0.75 P(dodge).
     // Crit from Recklessness and Elune's Light is left out, so those cooldowns still raise rage while active.
@@ -1539,7 +1541,7 @@ class Player {
         if (this.extrarage) rage += pHit * this.extrarage;
         if (this.extracritrage) rage += pCrit * this.extracritrage;
         // Unbridled Wrath: 1 rage on any swing that is not a miss or dodge
-        if (this.talents.umbridledwrath) rage += (1 - pMiss - pDodge) * (this.ftal ? this.foreverUW() : this.talents.umbridledwrath) / 100;
+        if (this.talents.umbridledwrath) rage += (1 - pMiss - pDodge) * this.foreverUW() / 100;
         return { rage, dmg };
     }
     attackmh(weapon, adjacent, damageSoFar) {
@@ -1979,7 +1981,9 @@ class Player {
             oh: this.oh,
             ragenorm: this.ragenorm,
             forever: this.forever,
-            ftal: this.ftal,
+            uwcfg: this.uwcfg,
+            dwmech: this.dwmech,
+            fphit: this.fphit,
             custom: this.custom,
             variants: this.variants,
         };
