@@ -73,4 +73,8 @@ See the original [CONTRIBUTING.md](CONTRIBUTING.md). The site is static, so serv
 
 ## Credits
 
+<<<<<<< HEAD
 Forked from [WarriorSim](https://github.com/GuybrushGit/WarriorSim) by **Guybrush-Golemagg**. This fork is maintained by **Speak-Grobbulus**.
+=======
+WarriorSim by [Guybrush](https://github.com/GuybrushGit/WarriorSim). Curved rage and WoW: Forever additions by speak-gg.
+>>>>>>> 3c161c2bc8a6a2f9f14bfafe5aac0d8e34f69f5c
