@@ -19,7 +19,8 @@ A fork of [WarriorSim](https://github.com/GuybrushGit/WarriorSim), the WoW Class
   - Death Wish 20% for 30 s;
   - no Execute cooldown;
   - Deep Wounds stacks (each crit adds main-hand weapon damage, no attack power, over the next 4 ticks);
-  - no rage from missed or dodged white swings, and no refund on a missed or dodged Heroic Strike.
+  - no rage from missed or dodged white swings, and no refund on a missed or dodged Heroic Strike;
+  - a queued Heroic Strike doesn't remove the off hand's dual wield miss penalty.
 
   The only settings exposed are Whirlwind rage cost (22 with Raging Blows), Furious Precision off-hand hit and the test stats.
 - **Season of Discovery:** unchanged from the original and not tested in this fork. A notice says so on load.
@@ -57,6 +58,7 @@ The Curved settings (threshold k, cap, sharpness p, off-hand and Windfury factor
 | Deep Wounds mechanics | Classic | Classic: a crit refreshes one bleed (60% of main-hand weapon damage incl. attack power over 12 s). Forever: each crit adds a new instance (60% of main-hand weapon damage, no attack power) paid over the next 4 ticks; instances stack and ticks cannot crit |
 | Rage on miss/dodge auto | Classic | Classic: a dodged white swing gives 75% of an average swing's rage. Forever: misses and dodges give nothing |
 | Rage on miss/dodge HS | Classic | Classic: a missed or dodged Heroic Strike refunds 80% of its cost. Forever: no refund |
+| Heroic Strike mechanics | Classic | Classic: a queued Heroic Strike (or Cleave) removes the dual wield miss penalty from off hand swings until it goes off. Forever: the off hand keeps its dual wield miss penalty |
 | Furious Precision OH hit % | 0 | 10 for Forever's 3/3 talent |
 
 ### Execute on a miss or dodge (both tabs)

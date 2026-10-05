@@ -34,6 +34,8 @@ class Player {
             dwmech: isF ? 'forever' : ($('select[name="dwmech"]').val() == 'forever' ? 'forever' : 'classic'),
             rmauto: isF ? 'forever' : ($('select[name="rmauto"]').val() == 'forever' ? 'forever' : 'classic'),
             rmhs: isF ? 'forever' : ($('select[name="rmhs"]').val() == 'forever' ? 'forever' : 'classic'),
+            // Heroic Strike mechanics. Classic: a queued Heroic Strike/Cleave removes the dual wield miss penalty from off hand swings. Forever: it doesn't.
+            hsmech: isF ? 'forever' : ($('select[name="hsmech"]').val() == 'forever' ? 'forever' : 'classic'),
             custom: {
                 hit: parseFloat($('input[name="custombonushit"]').val()) || 0,
                 crit: parseFloat($('input[name="custombonuscrit"]').val()) || 0,
@@ -111,7 +113,7 @@ class Player {
         this.ragenorm = !this.forever && config.ragenorm && config.ragenorm.on ? config.ragenorm : null;
         // Forever talents (Unbridled Wrath %, white swings only; Dual Wield Spec off-hand hit). Always on in Forever rage modes;
         // with Classic or Curved rage, on when the "Forever talents" variant is 1.
-        this.uwcfg = config.uw || { pct: 40, mech: 'classic' }; this.dwmech = config.dwmech == 'forever' ? 'forever' : 'classic'; this.rmauto = config.rmauto == 'forever' ? 'forever' : 'classic'; this.rmhs = config.rmhs == 'forever' ? 'forever' : 'classic';
+        this.uwcfg = config.uw || { pct: 40, mech: 'classic' }; this.dwmech = config.dwmech == 'forever' ? 'forever' : 'classic'; this.rmauto = config.rmauto == 'forever' ? 'forever' : 'classic'; this.rmhs = config.rmhs == 'forever' ? 'forever' : 'classic'; this.hsmech = config.hsmech == 'forever' ? 'forever' : 'classic';
         this.fphit = config.fphit || 0;
         this.pendingwf = 0;
         this.wfswing = false;
@@ -1430,7 +1432,7 @@ class Player {
     rollweapon(weapon) {
         let tmp = 0;
         let roll = rng10k();
-        tmp += Math.max(this.nextswinghs ? weapon.miss : weapon.dwmiss, 0) * 100;
+        tmp += Math.max(this.nextswinghs && this.hsmech != 'forever' ? weapon.miss : weapon.dwmiss, 0) * 100;
         if (roll < tmp) return RESULT.MISS;
         tmp += weapon.dodge * 100;
         if (roll < tmp) return RESULT.DODGE;
@@ -1633,7 +1635,7 @@ class Player {
 
         let procdmg = 0;
         let result;
-        if (this.nextswinghs && this.queuedswing && weapon.dwmiss > weapon.miss) {
+        if (this.nextswinghs && this.hsmech != 'forever' && this.queuedswing && weapon.dwmiss > weapon.miss) {
             // Queued HS/Cleave removes the dual wield miss penalty from off hand swings (see rollweapon).
             // Credit the expected extra off hand damage and rage to the queued ability.
             let e = this.hsoppEntry(this.queuedswing.name);
@@ -2000,6 +2002,7 @@ class Player {
             dwmech: this.dwmech,
             rmauto: this.rmauto,
             rmhs: this.rmhs,
+            hsmech: this.hsmech,
             whitecritmod: 1 + 1 * (1 + this.critdmgbonus * 2),
             fphit: this.fphit,
             custom: this.custom,

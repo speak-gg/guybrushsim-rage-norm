@@ -496,6 +496,7 @@ SIM.STATS = {
         if (mode != 'forever' && sim.player.dwmech == 'forever') vl.push('Deep Wounds: Forever mechanics (each crit stacks a new instance of main hand weapon damage, no AP, over the next 4 ticks)');
         if (mode != 'forever' && sim.player.rmauto == 'forever') vl.push('Rage on miss/dodge auto: Forever (dodged white swings give no rage)');
         if (mode != 'forever' && sim.player.rmhs == 'forever') vl.push('Rage on miss/dodge HS: Forever (no refund on a missed or dodged Heroic Strike)');
+        if (mode != 'forever' && sim.player.hsmech == 'forever') vl.push('Heroic Strike mechanics: Forever (a queued Heroic Strike does not remove the dual wield miss penalty from off hand swings)');
         if (mode != 'forever' && sim.player.fphit) vl.push(`Furious Precision +${sim.player.fphit}% off-hand hit`);
         if (va.flurryhaste || va.flurrycharges != 3) vl.push(`Flurry ${va.flurryhaste || 'talent'}% for ${va.flurrycharges} swings`);
         if (va.dwdmg != 20 || va.dwdur != 30) vl.push(`Death Wish ${va.dwdmg}% for ${va.dwdur}s`);

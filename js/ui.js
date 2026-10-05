@@ -832,6 +832,7 @@ SIM.UI = {
         if (mode != 'forever' && player.dwmech == 'forever') vl.push('Deep Wounds: Forever (stacks)');
         if (mode != 'forever' && player.rmauto == 'forever') vl.push('No rage on dodged autos');
         if (mode != 'forever' && player.rmhs == 'forever') vl.push('No HS refund');
+        if (mode != 'forever' && player.hsmech == 'forever') vl.push('HS keeps OH miss penalty');
         if (mode != 'forever' && player.fphit) vl.push('Furious Precision OH +' + player.fphit + '% hit');
         if ((va.flurryhaste && va.flurryhaste != player.talents.flurry) || va.flurrycharges != 3) vl.push('Flurry ' + (va.flurryhaste || player.talents.flurry) + '%/' + va.flurrycharges + ' swings');
         if (va.dwdmg != 20 || va.dwdur != 30) vl.push('DW ' + va.dwdmg + '%/' + va.dwdur + 's');
@@ -985,7 +986,7 @@ SIM.UI = {
         obj.filter_epic = view.main.find('#filter_epic').hasClass('active');
         obj.bleedreduction = view.fight.find('select[name="bleedreduction"]').val();
         obj.spellqueueing = view.fight.find('select[name="spellqueueing"]').val();
-        for (const n of ['varbtap','varbtflat','varwwoh','varwwcost','varflurryhaste','varflurrycharges','vardwdmg','vardwdur','varexecd','uwpct','uwmech','dwmech','rmauto','rmhs','fphit','ragenormcoef'])
+        for (const n of ['varbtap','varbtflat','varwwoh','varwwcost','varflurryhaste','varflurrycharges','vardwdmg','vardwdur','varexecd','uwpct','uwmech','dwmech','rmauto','rmhs','hsmech','fphit','ragenormcoef'])
             obj[n] = view.fight.find('[name="' + n + '"]').val();
         obj.custombonushit = view.fight.find('input[name="custombonushit"]').val();
         obj.custombonuscrit = view.fight.find('input[name="custombonuscrit"]').val();
