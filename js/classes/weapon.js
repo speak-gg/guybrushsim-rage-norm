@@ -41,6 +41,8 @@ class Weapon {
         this.totaldmg = 0;
         this.totalprocdmg = 0;
         this.data = [0,0,0,0,0];
+        // RAGE NORM: white-hit damage and counts by result (normal swings / Windfury swings) for the stats tab
+        this.resdmg = [0,0,0,0,0]; this.resn = [0,0,0,0,0]; this.resdmgwf = [0,0,0,0,0]; this.resnwf = [0,0,0,0,0];
         if (this.type == WEAPONTYPE.AXE) this.crit += player.talents.axecrit;
         if (this.type == WEAPONTYPE.POLEARM) this.crit += player.talents.polearmcrit;
         if (this.type == WEAPONTYPE.DAGGER) this.normSpeed = 1.7;

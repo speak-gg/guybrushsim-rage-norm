@@ -32,6 +32,8 @@ class Player {
             // Furious Precision (Forever Fury talent): flat off-hand hit %
             fphit: num('fphit', isF ? 10 : 0),
             dwmech: isF ? 'forever' : ($('select[name="dwmech"]').val() == 'forever' ? 'forever' : 'classic'),
+            rmauto: isF ? 'forever' : ($('select[name="rmauto"]').val() == 'forever' ? 'forever' : 'classic'),
+            rmhs: isF ? 'forever' : ($('select[name="rmhs"]').val() == 'forever' ? 'forever' : 'classic'),
             custom: {
                 hit: parseFloat($('input[name="custombonushit"]').val()) || 0,
                 crit: parseFloat($('input[name="custombonuscrit"]').val()) || 0,
@@ -109,7 +111,7 @@ class Player {
         this.ragenorm = !this.forever && config.ragenorm && config.ragenorm.on ? config.ragenorm : null;
         // Forever talents (Unbridled Wrath %, white swings only; Dual Wield Spec off-hand hit). Always on in Forever rage modes;
         // with Classic or Curved rage, on when the "Forever talents" variant is 1.
-        this.uwcfg = config.uw || { pct: 40, mech: 'classic' }; this.dwmech = config.dwmech == 'forever' ? 'forever' : 'classic';
+        this.uwcfg = config.uw || { pct: 40, mech: 'classic' }; this.dwmech = config.dwmech == 'forever' ? 'forever' : 'classic'; this.rmauto = config.rmauto == 'forever' ? 'forever' : 'classic'; this.rmhs = config.rmhs == 'forever' ? 'forever' : 'classic';
         this.fphit = config.fphit || 0;
         this.pendingwf = 0;
         this.wfswing = false;
@@ -1132,7 +1134,15 @@ class Player {
         if (spell) {
             if (spell instanceof Execute) spell.result = result;
             if (result == RESULT.MISS || result == RESULT.DODGE) {
-                if (spell.refund) this.gainRage(spell.cost * 0.8, 'Ability Refunds (80% of cost)', spell.name + ' (' + resname + ')');
+                if (spell instanceof Execute) {
+                    // RAGE NORM (build 15, as ForeverSim): a missed/dodged Execute still consumes all remaining rage,
+                    // then refunds 84% of (base cost + the extra rage it consumed).
+                    const extra = Math.max(this.rage, 0);
+                    if (extra > 0) this.spendRage(extra, spell.name, true);
+                    this.gainRage((spell.cost + extra) * 0.84, 'Ability Refunds (Execute: 84% of cost + extra rage)', spell.name + ' (' + resname + ')');
+                }
+                else if (spell.refund && !(this.rmhs == 'forever' && spell instanceof HeroicStrike))
+                    this.gainRage(spell.cost * 0.8, 'Ability Refunds (80% of cost)', spell.name + ' (' + resname + ')');
                 oldRage += (spell.cost || 0) + (spell.usedrage || 0); // prevent cbr proccing on refunds
             }
         }
@@ -1144,7 +1154,9 @@ class Player {
                 if (result != RESULT.MISS && result != RESULT.DODGE) this.gainRage(this.foreverRage(weapon, result == RESULT.CRIT), 'Auto Attacks', label);
             }
             else if (result == RESULT.DODGE) {
-                if (this.ragenorm) this.gainRage(0.75 * this.normRage(weapon.avgdmg(), weapon, false, wf), 'Auto Attacks', label);
+                // RAGE NORM: "Rage on miss/dodge auto" = Forever gives no rage for a dodged white swing
+                if (this.rmauto == 'forever') { }
+                else if (this.ragenorm) this.gainRage(0.75 * this.normRage(weapon.avgdmg(), weapon, false, wf), 'Auto Attacks', label);
                 else this.gainRage((weapon.avgdmg() / this.rageconversion) * 7.5 * 0.75, 'Auto Attacks', label);
             }
             else if (result != RESULT.MISS) {
@@ -1532,11 +1544,11 @@ class Player {
         else if (this.ragenorm) {
             // RAGE NORM: apply the curve to each outcome's average damage
             rage = pHit * this.normRage(avg, weapon, false, wf) + pGlance * this.normRage(avg * glanceMod, weapon, false, wf)
-                + pCrit * this.normRage(avg * critMod, weapon, true, wf) + pDodge * 0.75 * this.normRage(weapon.avgdmg(), weapon, false, wf);
+                + pCrit * this.normRage(avg * critMod, weapon, true, wf) + (this.rmauto == 'forever' ? 0 : pDodge * 0.75 * this.normRage(weapon.avgdmg(), weapon, false, wf));
         }
         else {
             rage = dmg * perDmg;
-            rage += pDodge * (weapon.avgdmg() / this.rageconversion) * 7.5 * 0.75;
+            if (this.rmauto != 'forever') rage += pDodge * (weapon.avgdmg() / this.rageconversion) * 7.5 * 0.75;
         }
         if (this.extrarage) rage += pHit * this.extrarage;
         if (this.extracritrage) rage += pCrit * this.extracritrage;
@@ -1604,6 +1616,8 @@ class Player {
         else {
             weapon.totaldmg += done;
             weapon.data[result]++;
+            if (this.wfswing) { weapon.resdmgwf[result] += done; weapon.resnwf[result]++; }
+            else { weapon.resdmg[result] += done; weapon.resn[result]++; }
         }
         weapon.totalprocdmg += procdmg;
         /* start-log */ if (this.logging) this.log(`${spell ? spell.name + ' for' : 'Main hand attack for'} ${~~done} (${Object.keys(RESULT)[result]})${adjacent ? ' (Adjacent)' : ''}`); /* end-log */
@@ -1648,6 +1662,7 @@ class Player {
         weapon.use();
         let done = this.dealdamage(dmg, result, weapon);
         weapon.data[result]++;
+        weapon.resdmg[result] += done; weapon.resn[result]++;
         weapon.totaldmg += done;
         weapon.totalprocdmg += procdmg;
         /* start-log */ if (this.logging) this.log(`Off hand attack for ${done + procdmg} (${Object.keys(RESULT)[result]})${this.nextswinghs ? ' (HS queued)' : ''}`); /* end-log */
@@ -1983,6 +1998,9 @@ class Player {
             forever: this.forever,
             uwcfg: this.uwcfg,
             dwmech: this.dwmech,
+            rmauto: this.rmauto,
+            rmhs: this.rmhs,
+            whitecritmod: 1 + 1 * (1 + this.critdmgbonus * 2),
             fphit: this.fphit,
             custom: this.custom,
             variants: this.variants,

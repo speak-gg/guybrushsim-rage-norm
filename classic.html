@@ -7,34 +7,34 @@
 
   <link rel="icon" type="image/x-icon" href="/WarriorSim/favicon.ico">
   <link href="dist/css/theme.default.min.css" rel="stylesheet">
-  <link href="dist/css/style.css?v=ragenorm14" rel="stylesheet">
+  <link href="dist/css/style.css?v=ragenorm16" rel="stylesheet">
   <link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin>
   <link href="https://fonts.googleapis.com/css?family=Open+Sans:300,400,600,700,800&display=swap" rel="stylesheet">
 
-  <script type="text/javascript" src="dist/js/libs/jquery-3.4.1.min.js?v=ragenorm14"></script>
-  <script type="text/javascript" src="dist/js/libs/jquery.tablesorter.min.js?v=ragenorm14"></script>
-  <script type="text/javascript" src="dist/js/libs/jquery.tablesorter.widgets.min.js?v=ragenorm14"></script>
-  <script type="text/javascript" src="dist/js/libs/Chart.min.js?v=ragenorm14"></script>
+  <script type="text/javascript" src="dist/js/libs/jquery-3.4.1.min.js?v=ragenorm16"></script>
+  <script type="text/javascript" src="dist/js/libs/jquery.tablesorter.min.js?v=ragenorm16"></script>
+  <script type="text/javascript" src="dist/js/libs/jquery.tablesorter.widgets.min.js?v=ragenorm16"></script>
+  <script type="text/javascript" src="dist/js/libs/Chart.min.js?v=ragenorm16"></script>
 
-  <script type="text/javascript" src="dist/js/classes/player.min.js?v=ragenorm14"></script>
-  <script type="text/javascript" src="dist/js/classes/simulation.min.js?v=ragenorm14"></script>
-  <script type="text/javascript" src="dist/js/classes/spell.min.js?v=ragenorm14"></script>
-  <script type="text/javascript" src="dist/js/classes/weapon.min.js?v=ragenorm14"></script>
-  <script type="text/javascript" src="dist/js/data/gear.min.js?v=ragenorm14"></script>
-  <script type="text/javascript" src="dist/js/data/enchants.min.js?v=ragenorm14"></script>
-  <script type="text/javascript" src="dist/js/data/levelstats.min.js?v=ragenorm14"></script>
-  <script type="text/javascript" src="dist/js/data/buffs.min.js?v=ragenorm14"></script>
-  <script type="text/javascript" src="dist/js/data/spells.min.js?v=ragenorm14"></script>
-  <script type="text/javascript" src="dist/js/data/talents.min.js?v=ragenorm14"></script>
-  <script type="text/javascript" src="dist/js/data/session.min.js?v=ragenorm14"></script>
-  <script type="text/javascript" src="dist/js/globals.min.js?v=ragenorm14"></script>
-  <script type="text/javascript" src="dist/js/settings.min.js?v=ragenorm14"></script>
-  <script type="text/javascript" src="dist/js/profiles.min.js?v=ragenorm14"></script>
-  <script type="text/javascript" src="dist/js/stats.min.js?v=ragenorm14"></script>
-  <script type="text/javascript" src="dist/js/ui.min.js?v=ragenorm14"></script>
+  <script type="text/javascript" src="dist/js/classes/player.min.js?v=ragenorm16"></script>
+  <script type="text/javascript" src="dist/js/classes/simulation.min.js?v=ragenorm16"></script>
+  <script type="text/javascript" src="dist/js/classes/spell.min.js?v=ragenorm16"></script>
+  <script type="text/javascript" src="dist/js/classes/weapon.min.js?v=ragenorm16"></script>
+  <script type="text/javascript" src="dist/js/data/gear.min.js?v=ragenorm16"></script>
+  <script type="text/javascript" src="dist/js/data/enchants.min.js?v=ragenorm16"></script>
+  <script type="text/javascript" src="dist/js/data/levelstats.min.js?v=ragenorm16"></script>
+  <script type="text/javascript" src="dist/js/data/buffs.min.js?v=ragenorm16"></script>
+  <script type="text/javascript" src="dist/js/data/spells.min.js?v=ragenorm16"></script>
+  <script type="text/javascript" src="dist/js/data/talents.min.js?v=ragenorm16"></script>
+  <script type="text/javascript" src="dist/js/data/session.min.js?v=ragenorm16"></script>
+  <script type="text/javascript" src="dist/js/globals.min.js?v=ragenorm16"></script>
+  <script type="text/javascript" src="dist/js/settings.min.js?v=ragenorm16"></script>
+  <script type="text/javascript" src="dist/js/profiles.min.js?v=ragenorm16"></script>
+  <script type="text/javascript" src="dist/js/stats.min.js?v=ragenorm16"></script>
+  <script type="text/javascript" src="dist/js/ui.min.js?v=ragenorm16"></script>
   <script>
     // RAGE NORM: save and refresh when the newer Yes/No and mechanics dropdowns change
-    $(document).on('change', 'article.fight select[name="varwwoh"], article.fight select[name="uwmech"], article.fight select[name="dwmech"]', function (e) {
+    $(document).on('change', 'article.fight select[name="varwwoh"], article.fight select[name="uwmech"], article.fight select[name="dwmech"], article.fight select[name="rmauto"], article.fight select[name="rmhs"]', function (e) {
       e.stopPropagation(); SIM.UI.updateSession(); SIM.UI.updateSidebar();
     });
   </script>
@@ -165,7 +165,7 @@
       <a href="#" class="btn js-stats disabled">STATS</a>
       <a href="#" class="btn js-settings">SETTINGS</a>
       <a href="#" class="btn js-profiles">PROFILES</a>
-      <div class="author" style="line-height:1.5;opacity:.85;font-size:11px">Forked from WarriorSim by <b>Guybrush-Golemagg</b><br>This fork is maintained by <b>Speak-Grobbulus</b><br><span style="color:#fff;background:#b33;padding:1px 6px;border-radius:3px;font-weight:bold">RAGE NORM build 14</span></div>
+      <div class="author" style="line-height:1.5;opacity:.85;font-size:11px">Forked from WarriorSim by <b>Guybrush-Golemagg</b><br>This fork is maintained by <b>Speak-Grobbulus</b><br><span style="color:#fff;background:#b33;padding:1px 6px;border-radius:3px;font-weight:bold">RAGE NORM build 16</span></div>
       <div class="manual"><a href="https://docs.google.com/document/d/1-ugglMDHqIQlEDiE2z9G7zuI-kgyvb2kvgPobWbcxy0/edit" target="_blank">User Manual</a></div>
       <div class="manual"><a href="https://github.com/GuybrushGit/WarriorSim" target="_blank">Original sim (Guybrush)</a></div>
       <div class="manual"><a href="https://github.com/speak-gg/guybrushsim-rage-norm" target="_blank">This fork (Rage Norm)</a></div>
@@ -355,6 +355,20 @@
           <li>
             <label style="color:#69c" title="Classic: each crit refreshes one bleed (60% of main hand weapon damage incl. attack power over 12 s). Forever: each crit adds a new instance (60% of main hand weapon damage, no attack power, snapshotted) paid over the next 4 ticks of the running 3 s schedule; instances stack and ticks cannot crit.">Deep Wounds mechanics</label>
             <select dir="rtl" name="dwmech">
+              <option value="classic">Classic</option>
+              <option value="forever">Forever</option>
+            </select>
+          </li>
+          <li>
+            <label style="color:#69c" title="Classic: a dodged white swing still gives 75% of the rage of an average swing (through the selected rage formula); a miss gives none. Forever: misses and dodges give no rage.">Rage on miss/dodge auto</label>
+            <select dir="rtl" name="rmauto">
+              <option value="classic">Classic</option>
+              <option value="forever">Forever</option>
+            </select>
+          </li>
+          <li>
+            <label style="color:#69c" title="Classic: a missed or dodged Heroic Strike refunds 80% of its cost. Forever: no refund.">Rage on miss/dodge HS</label>
+            <select dir="rtl" name="rmhs">
               <option value="classic">Classic</option>
               <option value="forever">Forever</option>
             </select>

@@ -40,7 +40,7 @@ class SimulationWorker {
         // RAGE NORM: browsers block Web Workers when the page is opened straight from disk (file://).
         // In that case run the simulation on the page itself instead of failing silently.
         try {
-            this.worker = new Worker('./dist/js/sim-worker.min.js?v=ragenorm14');
+            this.worker = new Worker('./dist/js/sim-worker.min.js?v=ragenorm16');
         } catch (e) {
             this.inline = { callback_finished, callback_update, callback_error };
             if (!SimulationWorker.warned && typeof SIM !== 'undefined' && SIM.UI && SIM.UI.addAlert) {
@@ -176,6 +176,8 @@ for (let key in data.hsopp) {
                             for (let i = 0; i < src.data.length; ++i) {
                                 dst.data[i] += src.data[i];
                             }
+                            for (const k of ['resdmg', 'resn', 'resdmgwf', 'resnwf'])
+                                if (dst[k] && src[k]) for (let i = 0; i < src[k].length; ++i) dst[k][i] += src[k][i];
                         }
                     }
                     function mergeWeapon(dst, src) {
@@ -185,6 +187,8 @@ for (let key in data.hsopp) {
                             for (let i = 0; i < src.data.length; ++i) {
                                 dst.data[i] += src.data[i];
                             }
+                            for (const k of ['resdmg', 'resn', 'resdmgwf', 'resnwf'])
+                                if (dst[k] && src[k]) for (let i = 0; i < src[k].length; ++i) dst[k][i] += src[k][i];
                             return dst;
                         } else {
                             return src;

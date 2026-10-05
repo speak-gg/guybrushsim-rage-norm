@@ -18,7 +18,8 @@ A fork of [WarriorSim](https://github.com/GuybrushGit/WarriorSim), the WoW Class
   - Dual Wield Specialization +50% off-hand rage;
   - Death Wish 20% for 30 s;
   - no Execute cooldown;
-  - Deep Wounds stacks (each crit adds main-hand weapon damage, no attack power, over the next 4 ticks).
+  - Deep Wounds stacks (each crit adds main-hand weapon damage, no attack power, over the next 4 ticks);
+  - no rage from missed or dodged white swings, and no refund on a missed or dodged Heroic Strike.
 
   The only settings exposed are Whirlwind rage cost (22 with Raging Blows), Furious Precision off-hand hit and the test stats.
 - **Season of Discovery:** unchanged from the original and not tested in this fork. A notice says so on load.
@@ -27,6 +28,7 @@ A fork of [WarriorSim](https://github.com/GuybrushGit/WarriorSim), the WoW Class
 
 - A **Rage Generated** table that breaks rage down by source: auto attacks by hand and outcome, Windfury swings, Unbridled Wrath, Bloodrage, Anger Management and refunds.
 - A **rage budget** that accounts for every point of rage: what was generated, what was spent, what overflowed the 100 cap, and what was left over.
+- A **White hit damage** table on the stats page: average crit and average normal hit for each hand (measured, and derived from crits ÷ the crit multiplier), with Windfury swings shown separately.
 - **True RPM**, which counts the rage from white swings that Heroic Strike replaced, plus Heroic Strike's real rage cost.
 
 ### Rage Formula (Classic tab)
@@ -53,7 +55,13 @@ The Curved settings (threshold k, cap, sharpness p, off-hand and Windfury factor
 | UW % (5/5) | 40 | 60 in Forever |
 | UW mechanics | Classic | Classic procs on white swings and Heroic Strike/Cleave; Forever only on white swings |
 | Deep Wounds mechanics | Classic | Classic: a crit refreshes one bleed (60% of main-hand weapon damage incl. attack power over 12 s). Forever: each crit adds a new instance (60% of main-hand weapon damage, no attack power) paid over the next 4 ticks; instances stack and ticks cannot crit |
+| Rage on miss/dodge auto | Classic | Classic: a dodged white swing gives 75% of an average swing's rage. Forever: misses and dodges give nothing |
+| Rage on miss/dodge HS | Classic | Classic: a missed or dodged Heroic Strike refunds 80% of its cost. Forever: no refund |
 | Furious Precision OH hit % | 0 | 10 for Forever's 3/3 talent |
+
+### Execute on a miss or dodge (both tabs)
+
+As in ForeverSim, a missed or dodged Execute still uses up all remaining rage, then refunds 84% of its base cost plus that extra rage.
 
 ### Test stats
 
@@ -73,8 +81,4 @@ See the original [CONTRIBUTING.md](CONTRIBUTING.md). The site is static, so serv
 
 ## Credits
 
-<<<<<<< HEAD
 Forked from [WarriorSim](https://github.com/GuybrushGit/WarriorSim) by **Guybrush-Golemagg**. This fork is maintained by **Speak-Grobbulus**.
-=======
-WarriorSim by [Guybrush](https://github.com/GuybrushGit/WarriorSim). Curved rage and WoW: Forever additions by speak-gg.
->>>>>>> 3c161c2bc8a6a2f9f14bfafe5aac0d8e34f69f5c

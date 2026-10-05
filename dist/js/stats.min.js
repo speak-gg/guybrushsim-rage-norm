@@ -389,6 +389,27 @@ SIM.STATS = {
         view.table.find('table').tablesorter({
             widthFixed: true,
         });
+
+        // RAGE NORM: average white-hit damage by result (after armor). "Hit from crits" = average crit ÷ the white crit multiplier.
+        const cm = sim.player.whitecritmod || 2;
+        const avg = (d, n, r) => n && n[r] ? d[r] / n[r] : 0;
+        const fmt = v => v ? v.toFixed(1) : '—';
+        let wh = `<div style="margin-top:14px;font-size:13px"><b>White hit damage</b> <span style="opacity:.7">(average per landed swing, after armor; crit multiplier ×${cm.toFixed(2)})</span></div>`;
+        wh += '<table><thead><tr><th>Hand</th><th>Avg crit</th><th>Avg hit (measured)</th><th>Avg hit (from crits ÷ ' + cm.toFixed(2) + ')</th><th>Crits</th><th>Hits</th></tr></thead><tbody>';
+        const row = (label, w, wf) => {
+            if (!w) return;
+            const d = wf ? w.resdmgwf : w.resdmg, n = wf ? w.resnwf : w.resn;
+            if (!d || !n || !(n[0] + n[3])) return;
+            const c = avg(d, n, 3), h = avg(d, n, 0);
+            wh += `<tr><td>${label}</td><td>${fmt(c)}</td><td>${fmt(h)}</td><td>${fmt(c / cm)}</td><td>${(n[3] / i).toFixed(1)}</td><td>${(n[0] / i).toFixed(1)}</td></tr>`;
+        };
+        row('Main Hand', sim.player.mh, false);
+        row('Main Hand (Windfury swings)', sim.player.mh, true);
+        row('Off Hand', sim.player.oh, false);
+        wh += '</tbody></table>';
+        wh += '<div style="font-size:12px;opacity:.7;margin:4px 0 10px">Crits and hits are per fight. Windfury swings carry the Windfury attack power bonus, so they are shown separately. Glancing blows are excluded.</div>';
+        view.table.append(wh);
+        view.table.find('table').last().tablesorter({ widthFixed: true });
     },
 
     // Macro view: the big chunks of rage that add up to the whole, per fight.
@@ -473,6 +494,8 @@ SIM.STATS = {
         const uw = sim.player.uwcfg || { pct: 40, mech: 'classic' };
         if (mode != 'forever' && (uw.pct != 40 || uw.mech != 'classic')) vl.push(`Unbridled Wrath ${uw.pct}% (${uw.mech == 'forever' ? 'Forever mechanics: white swings only' : 'Classic mechanics'})`);
         if (mode != 'forever' && sim.player.dwmech == 'forever') vl.push('Deep Wounds: Forever mechanics (each crit stacks a new instance of main hand weapon damage, no AP, over the next 4 ticks)');
+        if (mode != 'forever' && sim.player.rmauto == 'forever') vl.push('Rage on miss/dodge auto: Forever (dodged white swings give no rage)');
+        if (mode != 'forever' && sim.player.rmhs == 'forever') vl.push('Rage on miss/dodge HS: Forever (no refund on a missed or dodged Heroic Strike)');
         if (mode != 'forever' && sim.player.fphit) vl.push(`Furious Precision +${sim.player.fphit}% off-hand hit`);
         if (va.flurryhaste || va.flurrycharges != 3) vl.push(`Flurry ${va.flurryhaste || 'talent'}% for ${va.flurrycharges} swings`);
         if (va.dwdmg != 20 || va.dwdur != 30) vl.push(`Death Wish ${va.dwdmg}% for ${va.dwdur}s`);
@@ -481,7 +504,7 @@ SIM.STATS = {
         const cs = sim.player.custom || {};
         if (cs.hit || cs.crit || cs.dodgered) html += `<div style="font-size:13px;margin:-4px 0 10px"><b style="color:#6c6">Custom stats:</b> +${cs.hit}% hit, +${cs.crit}% crit, boss dodge −${cs.dodgered}%</div>`;
         const fv = sim.player.forever;
-        if (fv) html += `<div style="font-size:13px;margin:-4px 0 10px"><span style="color:#fff;background:#36c;padding:1px 6px;border-radius:3px;font-weight:bold">FOREVER RAGE v${fv.ver}</span> Each landed white swing gives rate × weapon speed (3.46 main hand, 1.73 off hand × ${['2', '1', '1.5'][fv.ver]} with Dual Wield Specialization), crits × ${['1', '1.75', '2'][fv.ver]}, damage ignored, misses and dodges give nothing. Unbridled Wrath ${uw.pct}% (${uw.mech == 'forever' ? 'white swings only' : 'Classic mechanics'}), Furious Precision off hand +${sim.player.fphit || 0}% hit.${mode == 'forever' ? ` Forever tab rules: Bloodthirst 45% AP, Flurry 25% for 3 swings, Whirlwind hits with both hands for ${va.wwcost} rage, Death Wish 20% for 30 s, no Execute cooldown, Deep Wounds stacks (main hand weapon damage only, no AP; ticks cannot crit).` : ''} Source: Marrow's Eternal Compendium ("Rage Generation", "Rage on Crit").</div>`;
+        if (fv) html += `<div style="font-size:13px;margin:-4px 0 10px"><span style="color:#fff;background:#36c;padding:1px 6px;border-radius:3px;font-weight:bold">FOREVER RAGE v${fv.ver}</span> Each landed white swing gives rate × weapon speed (3.46 main hand, 1.73 off hand × ${['2', '1', '1.5'][fv.ver]} with Dual Wield Specialization), crits × ${['1', '1.75', '2'][fv.ver]}, damage ignored, misses and dodges give nothing. Unbridled Wrath ${uw.pct}% (${uw.mech == 'forever' ? 'white swings only' : 'Classic mechanics'}), Furious Precision off hand +${sim.player.fphit || 0}% hit.${mode == 'forever' ? ` Forever tab rules: Bloodthirst 45% AP, Flurry 25% for 3 swings, Whirlwind hits with both hands for ${va.wwcost} rage, Death Wish 20% for 30 s, no Execute cooldown, Deep Wounds stacks (main hand weapon damage only, no AP; ticks cannot crit), dodged white swings give no rage, and a missed or dodged Heroic Strike gives no refund.` : ''} Source: Marrow's Eternal Compendium ("Rage Generation", "Rage on Crit").</div>`;
         else html += rn
             ? `<div style="font-size:13px;margin:-4px 0 10px"><span style="color:#fff;background:#b33;padding:1px 6px;border-radius:3px;font-weight:bold">${rn.modc ? 'CURVED + MODIFIED CLASSIC RAGE COEFFICIENT' : 'CURVED RAGE'}</span> White-hit rage uses ${rn.modc ? `Curved + Modified Classic rage coefficient (coefficient ${rn.coef}; Classic uses 7.5)` : 'Curved rage'}: Classic up to ${rn.k} × swing time, smooth cap ${rn.cap} rage per hasted second (p ${rn.p}), off hand × ${rn.oh}, crits × 2, Windfury swings × ${rn.wf}.${rn.tablecap ? ` Table cap on: cap × min(1, M_ref ÷ M), M_ref ${rn.mrefmh} MH / ${rn.mrefoh} OH, Recklessness and Elune's Light crit excluded.` : ''} "Main Hand Windfury" rows are Windfury extra attacks.</div>`
             : `<div style="font-size:13px;margin:-4px 0 10px;opacity:.8">Rage formula: Classic. "Main Hand Windfury" rows are Windfury extra attacks.</div>`;
