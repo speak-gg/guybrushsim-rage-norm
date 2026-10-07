@@ -4,6 +4,27 @@ class Player {
         const isF = globalThis.mode === 'forever';
         const num = (n, d) => (v => isNaN(v) ? d : v)(parseFloat($('[name="' + n + '"]').val()));
         const rf = isF ? 'F2' : $('select[name="ragenorm"]').val();
+        // RAGE NORM build 19: "PROPOSAL (LOCKED SETTINGS)" uses fixed values for everything from Bloodthirst AP coeff
+        // to RN M_ref off hand, whatever the inputs say (Curved + Modified Classic rage coefficient underneath).
+        if (!isF && rf == 'PROP') return Object.assign(Player.getConfigBase(), Player.PROPOSAL_CONFIG());
+        return Player.getConfigBase(rf, isF, num);
+    }
+    static PROPOSAL_CONFIG() {
+        return {
+            proposal: true,
+            variants: { btap: 0.40, btflat: 0, wwoh: 1, wwcost: 22, flurryhaste: 25, flurrycharges: 3, dwdmg: 15, dwdur: 30, execd: 4 },
+            uw: { pct: 60, mech: 'forever' },
+            fphit: 10,
+            dwmech: 'forever', rmauto: 'forever', rmhs: 'forever', hsmech: 'forever',
+            custom: { hit: 0, crit: 0, dodgered: 0 },
+            ragenorm: { on: true, modc: true, coef: 9, k: 120, cap: 11, p: 1, oh: 0.625, wf: 0.75, tablecap: false, mrefmh: 1.266, mrefoh: 1.398 },
+            forever: null,
+        };
+    }
+    static getConfigBase(rf, isF, num) {
+        if (isF === undefined) isF = globalThis.mode === 'forever';
+        if (num === undefined) num = (n, d) => (v => isNaN(v) ? d : v)(parseFloat($('[name="' + n + '"]').val()));
+        if (rf === undefined) rf = isF ? 'F2' : $('select[name="ragenorm"]').val();
         return {
             level: $('input[name="level"]').val(),
             race: $('select[name="race"]').val(),
@@ -106,6 +127,7 @@ class Player {
         this.spelldamage = 0;
         this.target = config.target;
         this.mode = config.mode;
+        this.proposal = !!config.proposal; // RAGE NORM build 19: PROPOSAL (LOCKED SETTINGS) rage formula
         this.bleedmod = parseFloat(this.target.bleedreduction);
         this.spellqueueing = config.spellqueueing;
         // RAGE NORM: normalized white-hit rage (threshold + smooth cap on hasted swing time)
@@ -1998,6 +2020,7 @@ class Player {
             oh: this.oh,
             ragenorm: this.ragenorm,
             forever: this.forever,
+            proposal: this.proposal,
             uwcfg: this.uwcfg,
             dwmech: this.dwmech,
             rmauto: this.rmauto,

@@ -858,7 +858,9 @@ SIM.UI = {
                 ...(mode == 'forever' ? ['BT 45% AP · Flurry 25%/3 · WW both hands, ' + ((player.variants || {}).wwcost) + ' rage · DW 20%/30s', 'Deep Wounds: stacks, weapon dmg only', 'Dodged autos: 0 rage · HS miss/dodge: no refund'] : []),
             ].map(l => '<div style="float:none">' + l + '</div>').join(''));
         } else {
-        view.sidebar.find('#ragenormstatus').html(rn
+        view.sidebar.find('#ragenormstatus').html(player.proposal
+            ? '<b style="color:#123;background:#ffcd45;padding:0 5px;border-radius:3px">PROPOSAL (LOCKED)</b>'
+            : rn
             ? '<b style="color:#fff;background:#b33;padding:0 5px;border-radius:3px">' + (rn.modc ? 'CURVED + MOD. CLASSIC COEF.' : 'CURVED') + '</b>'
             : 'Classic');
         view.sidebar.find('#ragenormformula').toggle(!!rn).html(rn ? [
@@ -954,7 +956,61 @@ SIM.UI = {
         }
     },
 
+    // RAGE NORM build 19: "PROPOSAL (LOCKED SETTINGS)" rage formula (Classic tab). While it is selected, every setting from
+    // Bloodthirst AP coeff to RN M_ref off hand shows the proposal value and can't be edited. The user's own values are
+    // kept aside (and saved to the profile) so they come back when another Rage Formula is picked.
+    PROPOSAL_LOCKED: {
+        varbtap: '0.40', varbtflat: '0', varwwoh: '1', varwwcost: '22', varflurryhaste: '25', varflurrycharges: '3',
+        vardwdmg: '15', vardwdur: '30', varexecd: '4',
+        uwpct: '60', uwmech: 'forever', dwmech: 'forever', rmauto: 'forever', rmhs: 'forever', hsmech: 'forever', fphit: '10',
+        custombonushit: '0', custombonuscrit: '0', customdodgered: '0',
+        ragenormcoef: '9', ragenormk: '120', ragenormcap: '11', ragenormp: '1', ragenormoh: '0.625', ragenormwf: '0.75',
+        ragenormtable: 'Off', ragenormmrefmh: '1.266', ragenormmrefoh: '1.398',
+    },
+
+    isProposal: function () {
+        return globalThis.mode === 'classic' && $('article.fight select[name="ragenorm"]').val() === 'PROP';
+    },
+
+    // on: true = lock, false = unlock (restoring the user's values), undefined = follow the Rage Formula dropdown.
+    // discard: drop any kept-aside values without restoring them (used before loading another profile).
+    applyProposalLock: function (on, discard) {
+        var view = this;
+        if (!view.fight || !view.fight.length) return;
+        if (on === undefined) on = view.isProposal();
+        for (let name in view.PROPOSAL_LOCKED) {
+            const el = view.fight.find('[name="' + name + '"]');
+            if (!el.length) continue;
+            if (on) {
+                if (!el.data('rnUnlockedSet')) {
+                    el.data('rnUnlocked', el.val());
+                    el.data('rnUnlockedSet', true);
+                }
+                el.val(view.PROPOSAL_LOCKED[name]).prop('disabled', true);
+            }
+            else {
+                if (el.data('rnUnlockedSet')) {
+                    if (!discard) el.val(el.data('rnUnlocked'));
+                    el.removeData('rnUnlocked').removeData('rnUnlockedSet');
+                }
+                el.prop('disabled', false);
+            }
+            el.closest('li').toggleClass('rn-locked', !!on);
+        }
+        view.fight.find('.js-rn-locknote').toggle(!!on);
+        view.proposalLocked = !!on;
+    },
+
     updateSession: function (i) {
+        // Save the user's own values, not the locked proposal values shown while PROPOSAL is selected
+        var view = this;
+        const locked = view.proposalLocked;
+        if (locked) view.applyProposalLock(false);
+        try { view.updateSessionInner(i); }
+        finally { if (locked) view.applyProposalLock(true); }
+    },
+
+    updateSessionInner: function (i) {
         var view = this;
 
         let obj = {};
@@ -1060,12 +1116,67 @@ SIM.UI = {
         localStorage[mode + profileid] = JSON.stringify(obj);
     },
 
+    // RAGE NORM build 19: the Classic and Forever tabs open on the default sets from js/data/ragenorm_presets.js
+    // (Dwarf). The page always opens profile slot 0, so this runs once per tab: the three sets go into slots 0-2 and any
+    // profiles the browser already had move up after them (nothing is deleted). A saved profile that already has one of
+    // the preset names (e.g. added from Profiles > Presets) is moved to the front instead of adding a second copy.
+    seedDefaultProfiles: function () {
+        if ((mode !== 'classic' && mode !== 'forever') || typeof RAGENORM_PRESETS === 'undefined') return;
+        const flag = 'ragenorm-defaults-' + mode;
+        try {
+            if (localStorage[flag]) return;
+            const slot = new RegExp('^' + mode + '(\\d+)$');
+            let existing = Object.keys(localStorage)
+                .map(k => { const m = k.match(slot); return m ? { key: k, index: parseInt(m[1]) } : null; })
+                .filter(Boolean)
+                .sort((a, b) => a.index - b.index)
+                .map(e => { try { return JSON.parse(localStorage[e.key]); } catch (err) { return null; } })
+                .filter(Boolean);
+
+            let base = JSON.parse(JSON.stringify(session));
+            const defaults = RAGENORM_PRESETS.map(preset => {
+                const found = existing.findIndex(st => st.profilename === preset.name);
+                if (found > -1) {
+                    const kept = existing.splice(found, 1)[0];
+                    if (preset.race) kept.race = preset.race;
+                    return kept;
+                }
+                const storage = SIM.PROFILES.buildImportedStorage(preset.code, base);
+                storage.profilename = preset.name;
+                // Settings the code doesn't carry get this page's defaults, so each set is self-contained
+                $('article.fight').find('input[name], select[name]').each(function () {
+                    const name = this.name;
+                    if (!name || name.indexOf('slider-') === 0 || storage[name] !== undefined) return;
+                    if (this.tagName === 'SELECT') {
+                        const opt = Array.from(this.options).find(o => o.defaultSelected) || this.options[0];
+                        if (opt) storage[name] = opt.value;
+                    }
+                    else storage[name] = this.defaultValue;
+                });
+                if (preset.race) storage.race = preset.race;
+                base = storage;
+                return storage;
+            });
+
+            const all = defaults.concat(existing).slice(0, 40);
+            for (let k of Object.keys(localStorage)) if (slot.test(k)) delete localStorage[k];
+            all.forEach((storage, i) => { localStorage[mode + i] = JSON.stringify(storage); });
+            localStorage[flag] = '1';
+            globalThis.profileid = 0;
+        } catch (e) {
+            console.error('Could not create the default profiles', e);
+        }
+    },
+
     loadSession: function () {
         var view = this;
         let profileid = globalThis.profileid || 0;
 
         if (localStorage.level) localStorage.clear(); // clear old style of storage
+        view.seedDefaultProfiles();
+        profileid = globalThis.profileid || 0;
         if (!localStorage[mode + profileid]) localStorage[mode + profileid] = JSON.stringify(session);
+        view.applyProposalLock(false, true);
 
         // update everyone for P4
         if (mode == "sod" && localStorage.sodPatch !== "6") {
@@ -1102,6 +1213,7 @@ SIM.UI = {
             view.fight.find('.slider[name="slider-' + prop + '"]').val(storage[prop]);
         }
         view.sidebar.find('.bg').attr('data-race', view.fight.find('select[name="race"]').val());
+        view.applyProposalLock();
 
         let basearmor = $('select[name="targetbasearmor"]').get(0);
         if (storage.targetcustomarmor) {

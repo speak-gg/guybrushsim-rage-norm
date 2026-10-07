@@ -1,0 +1,565 @@
+.sidebar .bottom .btn.js-play {
+    border-color: $icon-border;
+    color: $icon-border;
+    &:hover {
+        background: $icon-border;
+        color: #123;
+    }
+}
+
+.interactive {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+    background: rgba(0, 8, 20, 0.85);
+    align-items: center;
+    justify-content: center;
+    user-select: none;
+
+    &.open {
+        display: flex;
+    }
+
+    .ia-window {
+        width: min(960px, calc(100vw - 32px));
+        max-height: calc(100vh - 32px);
+        display: flex;
+        flex-direction: column;
+        background: #171d26;
+        border: 2px solid #525252;
+        color: #ddd;
+    }
+
+    .ia-btn {
+        display: inline-block;
+        padding: 0 12px;
+        height: 30px;
+        line-height: 30px;
+        border: 1px solid #888;
+        color: #ddd;
+        font-size: 12px;
+        font-weight: bold;
+        text-decoration: none;
+        cursor: pointer;
+        &:hover, &.active {
+            border-color: $icon-border;
+            color: $icon-border;
+        }
+    }
+
+    header {
+        display: flex;
+        align-items: center;
+        gap: 28px;
+        padding: 12px 18px;
+        background: #303950;
+        flex-wrap: wrap;
+    }
+
+    .ia-stat {
+        display: flex;
+        flex-direction: column;
+        label {
+            font-size: 11px;
+            text-transform: uppercase;
+            color: #9aa;
+        }
+        span {
+            font-size: 18px;
+            font-weight: bold;
+            font-variant-numeric: tabular-nums;
+        }
+        &.ia-dps span {
+            font-size: 26px;
+            color: $icon-border;
+        }
+    }
+
+    .ia-controls {
+        margin-left: auto;
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+    }
+
+    .ia-arena {
+        position: relative;
+        height: 280px;
+        padding: 20px 18px;
+        background: radial-gradient(ellipse at center, #2a3448 0%, #171d26 70%);
+        overflow: hidden;
+    }
+
+    .ia-target {
+        position: relative;
+        max-width: 420px;
+        height: 100%;
+        margin: 0 auto;
+    }
+
+    .ia-target-name {
+        text-align: center;
+        font-weight: bold;
+        margin-bottom: 6px;
+    }
+
+    .ia-healthbar {
+        position: relative;
+        height: 22px;
+        background: #3a1414;
+        border: 1px solid #000;
+        span {
+            position: absolute;
+            inset: 0;
+            text-align: center;
+            line-height: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            text-shadow: 0 0 3px #000;
+        }
+    }
+
+    .ia-health {
+        height: 100%;
+        background: #1f9e2a;
+        &.execute {
+            background: #c0392b;
+        }
+    }
+
+    .ia-execute {
+        position: absolute;
+        top: -4px;
+        bottom: -4px;
+        width: 2px;
+        background: $icon-border;
+    }
+
+    .ia-fct {
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 40px;
+        bottom: 0;
+        pointer-events: none;
+    }
+
+    .ia-float {
+        position: absolute;
+        bottom: 10%;
+        transform: translateX(-50%);
+        font-size: 18px;
+        font-weight: bold;
+        text-shadow: 0 0 3px #000, 1px 1px 0 #000;
+        animation: ia-float 1.2s ease-out forwards;
+        white-space: nowrap;
+
+        &.white { color: #fff; }
+        &.offhand { color: #bbb; font-size: 15px; }
+        &.ability { color: #ffe14a; }
+        &.tick { color: #d38cff; font-size: 14px; }
+        &.proc { color: #ff9f43; font-size: 15px; }
+        &.crit {
+            font-size: 28px;
+            animation-name: ia-float-crit;
+        }
+        &.miss, &.dodge { color: #9aa; font-size: 15px; }
+    }
+
+    .ia-overlay {
+        display: none;
+        position: absolute;
+        inset: 0;
+        background: rgba(10, 14, 20, 0.8);
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        overflow: auto;
+        padding: 16px;
+        &.visible {
+            display: flex;
+        }
+        .ia-start {
+            height: 40px;
+            line-height: 40px;
+            padding: 0 28px;
+            font-size: 14px;
+            border-color: $icon-border;
+            color: $icon-border;
+        }
+    }
+
+    .ia-summary {
+        text-align: center;
+        h3 { margin: 0 0 4px; }
+        p { margin: 2px 0; }
+        .ia-final {
+            font-size: 30px;
+            font-weight: bold;
+            color: $icon-border;
+        }
+        .ia-compare { color: #9cf; }
+        table {
+            margin: 10px auto 0;
+            border-collapse: collapse;
+            font-size: 12px;
+        }
+        th, td {
+            padding: 2px 10px;
+            text-align: right;
+            &:first-child { text-align: left; }
+        }
+        th {
+            color: #9aa;
+            border-bottom: 1px solid #525252;
+        }
+    }
+
+    .ia-player {
+        padding: 12px 18px 16px;
+        border-top: 1px solid #525252;
+    }
+
+    .ia-buffs {
+        min-height: 22px;
+        margin-bottom: 8px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        font-size: 11px;
+    }
+
+    .ia-stance {
+        font-weight: bold;
+        color: $icon-border;
+        margin-right: 6px;
+        line-height: 20px;
+    }
+
+    .ia-auras {
+        position: absolute;
+        left: 14px;
+        bottom: 10px;
+        right: 50%;
+        display: flex;
+        flex-wrap: wrap-reverse;
+        gap: 6px;
+        pointer-events: none;
+    }
+
+    .ia-aura {
+        position: relative;
+        width: 36px;
+        padding-bottom: 14px;
+        img, .ia-aura-letters {
+            display: block;
+            width: 36px;
+            height: 36px;
+            border: 1px solid #000;
+            box-shadow: 0 0 0 1px #3ddc5a;
+        }
+        .ia-aura-letters {
+            background: #26324a;
+            text-align: center;
+            line-height: 36px;
+            font-size: 13px;
+            font-weight: bold;
+        }
+        .ia-aura-stacks {
+            position: absolute;
+            right: 2px;
+            top: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            text-shadow: 0 0 2px #000, 0 0 2px #000;
+        }
+        .ia-aura-time {
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            text-align: center;
+            font-size: 11px;
+            font-weight: bold;
+            color: #ffe14a;
+            text-shadow: 0 0 2px #000;
+        }
+    }
+
+    .ia-bars {
+        display: grid;
+        gap: 5px;
+        max-width: 520px;
+    }
+
+    .ia-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        label {
+            width: 72px;
+            font-size: 11px;
+            color: #9aa;
+        }
+        &.js-ia-cast-row {
+            visibility: hidden;
+            &.visible { visibility: visible; }
+        }
+    }
+
+    .ia-bar {
+        position: relative;
+        flex: 1;
+        height: 14px;
+        background: #0c1118;
+        border: 1px solid #000;
+        div {
+            height: 100%;
+            width: 0;
+        }
+        span {
+            position: absolute;
+            inset: 0;
+            text-align: center;
+            font-size: 11px;
+            line-height: 13px;
+            font-weight: bold;
+            text-shadow: 0 0 2px #000;
+        }
+        &.ia-rage {
+            height: 18px;
+            div { background: #c0392b; }
+            span { line-height: 17px; }
+        }
+        &.ia-swing div { background: #8a95a8; }
+        &.ia-cast div { background: $icon-border; }
+    }
+
+    .ia-message {
+        height: 20px;
+        margin: 8px 0 4px;
+        font-size: 13px;
+        font-weight: bold;
+        &.error { color: #ff5a4a; }
+    }
+
+    .ia-actionbar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .ia-cdsection {
+        margin-top: 10px;
+        label {
+            display: block;
+            margin-bottom: 4px;
+            font-size: 11px;
+            text-transform: uppercase;
+            color: #9aa;
+        }
+        .ia-action {
+            width: 44px;
+            height: 44px;
+        }
+        .ia-cd-text {
+            line-height: 44px;
+            font-size: 14px;
+        }
+    }
+
+    .ia-action {
+        position: relative;
+        width: 52px;
+        height: 52px;
+        border: 2px solid #525252;
+        cursor: pointer;
+        overflow: hidden;
+        img {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+        .ia-cd {
+            position: absolute;
+            inset: 0;
+            &.active {
+                background: conic-gradient(rgba(0, 0, 0, 0.7) var(--p, 0%), transparent 0);
+            }
+        }
+        .ia-cd-text {
+            position: absolute;
+            inset: 0;
+            text-align: center;
+            line-height: 48px;
+            font-size: 18px;
+            font-weight: bold;
+            text-shadow: 0 0 3px #000;
+        }
+        .ia-key {
+            position: absolute;
+            top: 1px;
+            right: 3px;
+            font-size: 11px;
+            font-weight: bold;
+            text-shadow: 0 0 2px #000, 0 0 2px #000;
+        }
+        .ia-name {
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            font-size: 8px;
+            line-height: 10px;
+            text-align: center;
+            background: rgba(0, 0, 0, 0.6);
+            white-space: nowrap;
+            overflow: hidden;
+        }
+        &.unusable img {
+            filter: grayscale(0.8) brightness(0.5);
+        }
+        &.buffing {
+            border-color: #3ddc5a;
+            box-shadow: 0 0 8px #3ddc5a;
+            .ia-cd-text { color: #aaffb8; }
+        }
+        &.queued, &.highlight {
+            border-color: $icon-border;
+            box-shadow: 0 0 8px $icon-border;
+        }
+        &.pressed {
+            transform: scale(0.94);
+        }
+        &.rejected {
+            animation: ia-reject 0.35s;
+        }
+    }
+
+    // RAGE NORM build 18: active settings line and Keybindings menu
+    .ia-ruleset {
+        padding: 4px 18px;
+        font-size: 11px;
+        color: #9aa;
+        background: #222a3a;
+        border-bottom: 1px solid #525252;
+    }
+
+    .ia-kb {
+        display: none;
+        position: fixed;
+        inset: 0;
+        z-index: 2100;
+        background: rgba(0, 0, 0, 0.6);
+        align-items: center;
+        justify-content: center;
+        &.open {
+            display: flex;
+        }
+    }
+
+    .ia-kb-window {
+        width: min(520px, calc(100vw - 32px));
+        max-height: calc(100vh - 48px);
+        display: flex;
+        flex-direction: column;
+        background: #171d26;
+        border: 2px solid $icon-border;
+        padding: 16px 18px;
+        h3 {
+            margin: 0 0 6px;
+            color: $icon-border;
+        }
+        h4 {
+            margin: 12px 0 6px;
+            font-size: 11px;
+            text-transform: uppercase;
+            color: #9aa;
+        }
+    }
+
+    .ia-kb-note {
+        margin: 0 0 6px;
+        font-size: 12px;
+        color: #9aa;
+    }
+
+    .ia-kb-list {
+        overflow-y: auto;
+        padding-right: 4px;
+    }
+
+    .ia-kb-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 3px 0;
+        border-bottom: 1px solid #252d3a;
+        img {
+            width: 28px;
+            height: 28px;
+            border: 1px solid #000;
+        }
+        .ia-kb-name {
+            flex: 1;
+            font-size: 13px;
+        }
+        .ia-kb-key {
+            min-width: 150px;
+            text-align: center;
+            em {
+                font-style: normal;
+                color: #777;
+            }
+        }
+        .ia-kb-clear {
+            padding: 0 9px;
+        }
+        &.capturing .ia-kb-key {
+            border-color: $icon-border;
+            color: $icon-border;
+            box-shadow: 0 0 6px $icon-border;
+        }
+    }
+
+    .ia-kb-status {
+        min-height: 18px;
+        margin: 8px 0 4px;
+        font-size: 12px;
+        color: $icon-border;
+    }
+
+    .ia-kb-buttons {
+        display: flex;
+        gap: 6px;
+        .ia-kb-spacer { flex: 1; }
+        .ia-kb-save {
+            border-color: $icon-border;
+            color: $icon-border;
+        }
+    }
+
+    @include mobile {
+        .ia-arena { height: 220px; }
+        header { gap: 14px; }
+        .ia-controls { margin-left: 0; }
+    }
+}
+
+@keyframes ia-float {
+    0% { opacity: 1; transform: translate(-50%, 0); }
+    100% { opacity: 0; transform: translate(-50%, -140px); }
+}
+
+@keyframes ia-float-crit {
+    0% { opacity: 1; transform: translate(-50%, 0) scale(1.4); }
+    20% { transform: translate(-50%, -20px) scale(1); }
+    100% { opacity: 0; transform: translate(-50%, -140px) scale(1); }
+}
+
+@keyframes ia-reject {
+    0%, 100% { border-color: #525252; }
+    50% { border-color: #ff3b30; box-shadow: 0 0 10px #ff3b30; }
+}

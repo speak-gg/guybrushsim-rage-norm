@@ -25,6 +25,19 @@ A fork of [WarriorSim](https://github.com/GuybrushGit/WarriorSim), the WoW Class
   The only settings exposed are Whirlwind rage cost (22 with Raging Blows), Furious Precision off-hand hit and the test stats.
 - **Season of Discovery:** unchanged from the original and not tested in this fork. A notice says so on load.
 
+### Play Fight (Classic and Forever tabs)
+
+Ported from the WarriorSim-classic fork. **PLAY FIGHT** in the sidebar runs one fight in real time and you press the abilities yourself, with damage numbers, sounds, buff timers, a swing timer and a damage breakdown at the end.
+
+- It uses the same settings as the DPS sim on that tab: rage formula (Classic, Forever v2, Curved), ability variants (Bloodthirst AP, Whirlwind off-hand hit and cost, Flurry, Death Wish, Execute cooldown, UW), mechanics options, test stats and fight settings (length, execute %, starting rage, batching). A line under the header shows the tab, rage formula and fight length in use.
+- Abilities: every rotation ability the character can use (Bloodthirst, Mortal Strike, Whirlwind, Slam, Execute, Overpower, Heroic Strike, Cleave, Hamstring, Sunder Armor, Thunder Clap, Rend, Shield Slam). With **Cooldowns: Manual**, Death Wish, Recklessness, Bloodrage, potions and on-use items get their own bar.
+- **Keybindings:** opens a menu to bind any ability or cooldown to a key, a Shift/Ctrl/Alt combination, the mouse wheel (up or down) or mouse buttons 3-5. Binding a key that's already in use moves it. Binds are saved in the browser and shared by both tabs. Space (pause) and Escape (close) are reserved.
+- Defaults: 4 Bloodthirst, 2 Whirlwind, 5 Execute, R Hamstring, mouse wheel down Heroic Strike, other abilities on the free number keys, cooldowns on F1-F12 (F1 Death Wish).
+
+### Default gear sets (Classic and Forever tabs)
+
+The Classic and Forever tabs open on three Dwarf profiles: **default_r14mc20**, **default_naxxbis** and **default_prebis** (stored in `js/data/ragenorm_presets.js` as export codes). This happens once per tab: the sets go into the first three profile slots, and any profiles the browser already had are kept after them. Anyone can add them again from **Profiles > Presets**, which adds the set as a new profile without touching existing ones.
+
 ### Rage tracking
 
 - A **Rage Generated** table that breaks rage down by source: auto attacks by hand and outcome, Windfury swings, Unbridled Wrath, Bloodrage, Anger Management and refunds.
@@ -40,6 +53,7 @@ A fork of [WarriorSim](https://github.com/GuybrushGit/WarriorSim), the WoW Class
 | Forever v2 | WoW: Forever's rate × weapon speed per landed swing (3.46 main hand, 1.73 off hand, ×1.5 with Dual Wield Specialization). Crits ×2; damage is ignored; misses and dodges give nothing |
 | Curved | Classic rage up to a threshold, then a smooth curve toward a per-swing cap. Both scale with hasted swing time; off hand ×0.625, crits ×2, Windfury swings ×0.75 |
 | Curved + Modified Classic rage coefficient | Curved, but the part below the threshold uses a **Modified Classic rage coefficient** of your choice instead of 7.5 (rage = c × damage ÷ 230.6). This tunes early level-60 rage without moving the cap |
+| PROPOSAL (LOCKED SETTINGS) | Curved + Modified Classic rage coefficient with the proposal's values, locked. Everything from Bloodthirst AP coeff to RN M_ref off hand is fixed: Bloodthirst 0.40 × AP + 0, Whirlwind hits with both hands for 22 rage, Flurry 25% for 3 swings, Death Wish 15% for 30 s, Execute 4 s cooldown, UW 60% with every mechanic set to Forever, Furious Precision +10% off-hand hit, no test stats, coefficient 9, k 120, cap 11, p 1, off hand 0.625, Windfury 0.75, table cap off (M_ref 1.266 / 1.398). Your own values are kept and come back when you pick another formula |
 
 The Curved settings (threshold k, cap, sharpness p, off-hand and Windfury factors, Modified Classic rage coefficient, and the optional M_ref attack-table cap) sit in their own section. They only apply to the two Curved formulas.
 

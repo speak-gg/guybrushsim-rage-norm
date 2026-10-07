@@ -1,20 +1,20 @@
 importScripts(
-    './data/buffs.min.js?v=ragenorm16',
-    './data/enchants.min.js?v=ragenorm16',
-    './data/levelstats.min.js?v=ragenorm16',
-    './data/spells.min.js?v=ragenorm16',
-    './data/talents.min.js?v=ragenorm16',
-    './classes/player.min.js?v=ragenorm16',
-    './classes/simulation.min.js?v=ragenorm16',
-    './classes/spell.min.js?v=ragenorm16',
-    './classes/weapon.min.js?v=ragenorm16',
-    './globals.min.js?v=ragenorm16',
+    './data/buffs.min.js?v=ragenorm19',
+    './data/enchants.min.js?v=ragenorm19',
+    './data/levelstats.min.js?v=ragenorm19',
+    './data/spells.min.js?v=ragenorm19',
+    './data/talents.min.js?v=ragenorm19',
+    './classes/player.min.js?v=ragenorm19',
+    './classes/simulation.min.js?v=ragenorm19',
+    './classes/spell.min.js?v=ragenorm19',
+    './classes/weapon.min.js?v=ragenorm19',
+    './globals.min.js?v=ragenorm19',
 );
 
 onmessage = (event) => {
     const params = event.data;
-    if (params.globals.sod) importScripts('./data/gear_sod.min.js?v=ragenorm16','./data/runes.min.js?v=ragenorm16');
-    else importScripts('./data/gear.min.js?v=ragenorm16');
+    if (params.globals.sod) importScripts('./data/gear_sod.min.js?v=ragenorm19','./data/runes.min.js?v=ragenorm19');
+    else importScripts('./data/gear.min.js?v=ragenorm19');
     updateGlobals(params.globals);
     const player = new Player(...params.player);
     const sim = new Simulation(player, (report) => {

@@ -234,6 +234,7 @@ SIM.SETTINGS = {
 
         view.fight.on('change', 'select[name="ragenorm"]', function (e) {
             e.stopPropagation();
+            SIM.UI.applyProposalLock(); // RAGE NORM build 19: lock/unlock the settings for PROPOSAL (LOCKED SETTINGS)
             SIM.UI.updateSession();
             SIM.UI.updateSidebar();
         });

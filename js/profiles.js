@@ -48,6 +48,14 @@ SIM.PROFILES = {
             view.textarea.focus();
         });
 
+        view.presets.on('click','.import-ragenorm', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            const preset = RAGENORM_PRESETS[$(this).data('preset')];
+            let index = view.container.find('.profile').last().data('index') + 1;
+            view.importProfile(preset.code, index, preset.name, preset.race);
+        });
+
         view.presets.on('click','.import-thbwl', function (e) {
             e.preventDefault();
             e.stopPropagation();
@@ -228,6 +236,11 @@ SIM.PROFILES = {
             <div class="import-profile">${svgImport}<p>Import Profile</p></div>
             </div>`);
 
+        if ((mode == "classic" || mode == "forever") && typeof RAGENORM_PRESETS !== 'undefined') {
+            view.presets.empty();
+            view.presets.append(`<label>Presets:</label>` + RAGENORM_PRESETS.map((p, i) => `<div class="import-ragenorm" data-preset="${i}" title="Add ${p.name} as a new profile">${p.name}</div>`).join(''));
+        }
+
         if (mode == "sod") {
             view.presets.empty();
             view.presets.append(`
@@ -390,12 +403,30 @@ SIM.PROFILES = {
         SIM.UI.addAlert('Profile copied to clipboard');
     },
 
-    importProfile(str, index) {
+    importProfile(str, index, name, race) {
         const view = this;
         try {
-            let minified = str[0] == '{' ? JSON.parse(str.trim()) : JSON.parse(atob(str.trim()));
             if (!localStorage[mode + (globalThis.profileid || 0)]) SIM.UI.loadSession();
-            let storage = JSON.parse(localStorage[mode + (globalThis.profileid || 0)]);
+            let storage = view.buildImportedStorage(str, JSON.parse(localStorage[mode + (globalThis.profileid || 0)]));
+            if (name) storage.profilename = name;
+            if (race) storage.race = race;
+
+            let modei = mode + (index || 0);
+            localStorage[modei] = JSON.stringify(storage);
+            view.buildProfiles();
+            SIM.UI.addAlert(storage.profilename + ' imported');
+
+        } catch (e) {
+            SIM.UI.addAlert('Invalid profile');
+        }
+    },
+
+    // RAGE NORM build 19: the import itself, split out so the default sets can be created before the page is built.
+    // Settings missing from the code (e.g. Classic-only options in a code exported from the Forever tab) keep base's values.
+    buildImportedStorage(str, base) {
+            let minified = str[0] == '{' ? JSON.parse(str.trim()) : JSON.parse(atob(str.trim()));
+            let storage = JSON.parse(JSON.stringify(base));
+            if (!storage.rotation) storage.rotation = JSON.parse(JSON.stringify(session.rotation || []));
 
 
             for(let prop in minified) {
@@ -481,14 +512,7 @@ SIM.PROFILES = {
                     storage.enchant[type].push({id: e, selected: true});
             }
 
-            let modei = mode + (index || 0);
-            localStorage[modei] = JSON.stringify(storage);
-            view.buildProfiles();
-            SIM.UI.addAlert(storage.profilename + ' imported');
-
-        } catch (e) {
-            SIM.UI.addAlert('Invalid profile');
-        }
+            return storage;
     }
 
 };

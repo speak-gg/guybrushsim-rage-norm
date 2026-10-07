@@ -483,3 +483,9 @@
         }
     }
 }
+
+// RAGE NORM build 19: settings locked by the PROPOSAL (LOCKED SETTINGS) rage formula
+.settings article.fight li.rn-locked {
+    input:disabled, select:disabled { opacity: .55; cursor: not-allowed; }
+    label { opacity: .8; }
+}

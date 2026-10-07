@@ -40,7 +40,7 @@ class SimulationWorker {
         // RAGE NORM: browsers block Web Workers when the page is opened straight from disk (file://).
         // In that case run the simulation on the page itself instead of failing silently.
         try {
-            this.worker = new Worker('./dist/js/sim-worker.min.js?v=ragenorm16');
+            this.worker = new Worker('./dist/js/sim-worker.min.js?v=ragenorm19');
         } catch (e) {
             this.inline = { callback_finished, callback_update, callback_error };
             if (!SimulationWorker.warned && typeof SIM !== 'undefined' && SIM.UI && SIM.UI.addAlert) {
